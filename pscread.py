@@ -20,6 +20,7 @@ TYPE = rf"(?:{IDENT}:)*{IDENT}(?:\[\])?"
 SCRIPTNAME_RE = re.compile(rf"(?i)^\s*scriptname\s+(?P<name>(?:{IDENT}:)*{IDENT})(?:\s+extends\s+(?P<ext>(?:{IDENT}:)*{IDENT}))?(?P<flags>[\w\s]*)$")
 DECL_RE = re.compile(rf"(?i)^\s*(?:(?P<ret>{TYPE})\s+)?(?P<kind>function|event)\s+(?P<name>(?:{IDENT}\.)?{IDENT})\s*\(")
 STRUCT_RE = re.compile(rf"(?i)^\s*struct\s+(?P<name>{IDENT})\s*$")
+IMPORT_RE = re.compile(rf"(?i)^\s*import\s+(?P<name>(?:{IDENT}:)*{IDENT})\s*$")
 PROP_RE = re.compile(rf"(?i)^\s*(?P<type>{TYPE})\s+property\s+(?P<name>{IDENT})")
 VAR_RE = re.compile(rf"(?i)^\s*(?P<type>{TYPE})\s+(?P<name>{IDENT})\s*(?:=|$|\b(?:const|hidden|conditional)\b)")
 MEMBER_FLAGS = ("native", "global", "debugonly", "betaonly")
@@ -144,20 +145,38 @@ CALL_RE = re.compile(rf"(?:(?P<pre>(?:\bas\s+(?P<cast>{TYPE})\s*\)|(?<!\w)(?P<ob
 
 def read_calls(text):
     """The script's name, parent and every call it makes:
-    {'name', 'extends', 'own': {lowercase names declared here}, 'calls': [call]}.
+    {'name', 'extends', 'own': {lowercase names declared here}, 'imports': [Import lines], 'calls': [call]}.
     Each call: {'line', 'name', 'target': ('static'|'var'|'cast'|'self'|'parent'|'unknown', text), 'loop': bool,
     'types': {variable -> type} in scope}."""
-    info = {"name": "", "extends": "", "own": set(), "calls": []}
+    info = {"name": "", "extends": "", "own": set(), "imports": [], "calls": []}
     script_vars, fn_vars = {}, {}
     depth = 0
     lines = clean(text)
+    # First pass: names, imports and script-level declarations, which Papyrus allows anywhere in the file.
+    in_fn = False
     for _, line in lines:
+        low = line.strip().lower()
         m = SCRIPTNAME_RE.match(line)
         if m and not info["name"]:
             info["name"], info["extends"] = m.group("name"), m.group("ext") or ""
+            continue
+        m = IMPORT_RE.match(line)
+        if m:
+            info["imports"].append(m.group("name"))
+            continue
         m = DECL_RE.match(line)
         if m:
             info["own"].add(m.group("name").lower())
+            in_fn = not re.search(r"(?i)\bnative\b", split_params(line[m.start("name"):])[1])
+            continue
+        if re.match(r"(?i)^(endfunction|endevent)\b", low):
+            in_fn = False
+            continue
+        if in_fn:
+            continue
+        m = PROP_RE.match(line) or VAR_RE.match(line)
+        if m and m.group("type").lower().rstrip("[]") not in KEYWORDS and m.group("name").lower() not in KEYWORDS:
+            script_vars[m.group("name").lower()] = m.group("type")
     in_fn = False
     for num, line in lines:
         low = line.strip().lower()

@@ -119,7 +119,9 @@ def read_function(r):
 
 
 def read_pex(data, name):
-    """{'objects': [...], 'lines': {(object, state, function): [line per instruction]}} for one script."""
+    """{'objects': [...], 'lines': {(object, state, function, type): [line per instruction]}} for one script.
+    Each object's 'functions' include property Get and Set handlers, named '<Property>.get' and '<Property>.set';
+    fn['debug'] = (name, type) is the key part used in 'lines'."""
     r = Reader(data, name)
     magic = r.u32()
     if magic == 0xDEC057FA:
@@ -142,8 +144,8 @@ def read_pex(data, name):
         for _ in range(r.u16()):
             obj, state, fn, ftype = r.sref(), r.sref(), r.sref(), r.u8()
             ls = [r.u16() for _ in range(r.u16())]
-            if ftype == 0:
-                lines[(obj.lower(), state.lower(), fn.lower())] = ls
+            # type 0 = a function, 1 = a property's Get, 2 = its Set (fn is then the property's name)
+            lines[(obj.lower(), state.lower(), fn.lower(), ftype)] = ls
         for _ in range(r.u16()):
             r.sref(), r.sref(), r.sref(), r.u32()
             for _ in range(r.u16()):
@@ -183,16 +185,17 @@ def read_pex(data, name):
             if pfl & 4:
                 r.sref()
             else:
-                if pfl & 1:
-                    read_function(r)
-                if pfl & 2:
-                    read_function(r)
+                for bit, kind, ftype in ((1, "get", 1), (2, "set", 2)):
+                    if pfl & bit:
+                        fn = read_function(r)
+                        fn["name"], fn["state"], fn["debug"] = f"{pname}.{kind}", "", (pname, ftype)
+                        obj["functions"].append(fn)
         for _ in range(r.u16()):
             state = r.sref()
             for _ in range(r.u16()):
                 fname = r.sref()
                 fn = read_function(r)
-                fn["name"], fn["state"] = fname, state
+                fn["name"], fn["state"], fn["debug"] = fname, state, (fname, 0)
                 obj["functions"].append(fn)
         if r.p - start not in (size - 4, size):
             raise PexError(f"{name}: object {obj['name']} read {r.p - start} bytes but its size field says {size}")

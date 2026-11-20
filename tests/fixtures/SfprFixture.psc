@@ -22,3 +22,12 @@ Function Helper()
 	; Debug.MessageBox("commented out: no finding")
 	String s = "Debug.Notification(not a call)"
 EndFunction
+
+Int Property Count
+	Int Function Get()
+		Return 0
+	EndFunction
+	Function Set(Int aiValue)
+		Debug.MessageBox("set") ; DebugOnly, inside a property's Set handler
+	EndFunction
+EndProperty

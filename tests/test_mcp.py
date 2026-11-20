@@ -36,6 +36,10 @@ class Mcp(unittest.TestCase):
                         "arguments": {"paths": [os.path.join(FIX, "SfprFixture.pex")], "allow": ["Debug.Trace"]}}},
             {"jsonrpc": "2.0", "id": 6, "method": "tools/call", "params": {"name": "nope", "arguments": {}}},
             {"jsonrpc": "2.0", "id": 7, "method": "resources/list"},
+            {"jsonrpc": "2.0", "id": 8, "method": "tools/call", "params": ["x"]},
+            {"jsonrpc": "2.0", "id": 9, "method": "tools/call",
+             "params": {"name": "papyrus_check",
+                        "arguments": {"paths": [os.path.join(FIX, "SfprFixture.pex")], "allow": "Debug.Trace"}}},
         )
         by_id = {m.get("id"): m for m in out}
         self.assertEqual(by_id[1]["result"]["protocolVersion"], "2025-06-18")
@@ -48,13 +52,16 @@ class Mcp(unittest.TestCase):
         miss = by_id[4]["result"]
         self.assertFalse(miss["isError"])
         self.assertFalse(miss["structuredContent"]["found"])
+        want = {"Debug.Notification", "Utility.Wait", "Game.Warning", "Debug.MessageBox"}
         calls = {f["call"] for f in by_id[5]["result"]["structuredContent"]["findings"]}
-        self.assertEqual(calls, {"Debug.Notification", "Utility.Wait", "Game.Warning"})
+        self.assertEqual(calls, want)
         self.assertTrue(by_id[6]["result"]["isError"])
         self.assertEqual(by_id[7]["error"]["code"], -32601)
+        self.assertEqual(by_id[8]["error"]["code"], -32602)  # params that are not an object: the server goes on
+        calls = {f["call"] for f in by_id[9]["result"]["structuredContent"]["findings"]}
+        self.assertEqual(calls, want)  # allow given as one string, not split into letters
         self.assertEqual(by_id[None]["error"]["code"], -32700)  # the "not json" line
-        self.assertNotIn(2.5, by_id)  # the notification got no reply
-        self.assertEqual(len(out), 8)
+        self.assertEqual(len(out), 10)  # the notification got no reply
 
 
 if __name__ == "__main__":

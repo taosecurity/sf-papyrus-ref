@@ -74,7 +74,8 @@ class Check(unittest.TestCase):
         key = lambda x: (x["line"], x["call"], x["rule"])  # noqa: E731
         self.assertEqual(sorted(map(key, a)), sorted(map(key, b)))
         self.assertEqual(sorted(map(key, b)), [(7, "Debug.Trace", "debugonly"), (8, "Debug.Notification", "debugonly"),
-                                               (11, "Utility.Wait", "latent-loop"), (15, "Game.Warning", "betaonly")])
+                                               (11, "Utility.Wait", "latent-loop"), (15, "Game.Warning", "betaonly"),
+                                               (31, "Debug.MessageBox", "debugonly")])  # 31: a property's Set
 
     def test_severity_and_exit_codes(self):
         code, f = self.findings(os.path.join(FIX, "SfprFixture.psc"))
@@ -85,7 +86,13 @@ class Check(unittest.TestCase):
 
     def test_allow(self):
         _, f = self.findings(os.path.join(FIX, "SfprFixture.pex"), "--allow", "debug.trace,Debug.Notification")
-        self.assertEqual({x["call"] for x in f}, {"Utility.Wait", "Game.Warning"})
+        self.assertEqual({x["call"] for x in f}, {"Utility.Wait", "Game.Warning", "Debug.MessageBox"})
+
+    def test_bad_log_path_is_a_message(self):
+        code, _, err = run_real("lookup", "Wait", "--no-local", "--log",
+                                os.path.join(FIX, "no-such-folder", "x.log"))
+        self.assertEqual(code, 2)
+        self.assertIn("could not open the log file", err)
 
     def test_missing_path(self):
         code, _, _ = run_real("check", os.path.join(FIX, "nope.psc"), "--no-local")
@@ -150,6 +157,35 @@ class Local(unittest.TestCase):
         self.assertEqual(j["inherited_from"], "Parent")
         self.assertEqual(j["matches"][0]["source_flags"], ["debugonly"])
 
+    def test_import_is_followed_with_a_cache(self):
+        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+            ref_mod.main(["build-local", "--sources", self.src, "--cache", self.cache, "--quiet"])
+        ch = ref_mod.Checker(ref_mod.Ref(), ref_mod.Local(self.cache))
+        psc = "Scriptname Mine extends Child\nImport Debug\nFunction F()\n  Notification(\"x\")\n  Peek()\nEndFunction\n"
+        got = {(x["call"], x["confidence"]) for x in ch.check_psc("Mine.psc", psc)}
+        self.assertEqual(got, {("Debug.Notification", "exact"), ("Parent.Peek", "exact")})
+
+    def test_damaged_cache_warns(self):
+        os.makedirs(os.path.dirname(self.cache), exist_ok=True)
+        with open(self.cache, "w", encoding="utf-8") as f:
+            f.write("{bad")
+        err = io.StringIO()
+        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(err):
+            code = ref_mod.main(["lookup", "Wait", "--cache", self.cache, "--quiet"])
+        self.assertEqual(code, 0)
+        self.assertIn("run build-local again", err.getvalue())
+
+    def test_unwritable_cache_is_a_message(self):
+        blocker = os.path.join(self.tmp.name, "file")
+        with open(blocker, "w") as f:
+            f.write("x")
+        err = io.StringIO()
+        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(err):
+            code = ref_mod.main(["build-local", "--sources", self.src, "--cache", os.path.join(blocker, "c.json"),
+                                 "--quiet"])
+        self.assertEqual(code, 2)
+        self.assertIn("could not write the local cache", err.getvalue())
+
     def test_lookup_inherited_without_cache(self):
         code, out, _ = run_real("lookup", "Actor.GetValue", "--json", "--no-local")
         j = json.loads(out)
@@ -173,6 +209,11 @@ class Psc(unittest.TestCase):
                '  { Game.Warning() }\nEndFunction\n'
         calls = psc_mod.read_calls(text)["calls"]
         self.assertEqual([(c["line"], c["name"], c["target"]) for c in calls], [(5, "Trace", ("var", "Debug"))])
+
+    def test_late_script_level_declaration_is_typed(self):
+        text = "Scriptname S\nFunction F()\n  Target.MoveTo(Target)\nEndFunction\nActor Property Target Auto\n"
+        calls = ref_mod.pscread.read_calls(text)["calls"]
+        self.assertEqual(calls[0]["types"].get("target"), "Actor")
 
     def test_states_and_structs(self):
         d = ref_mod.pscread.read_declarations(

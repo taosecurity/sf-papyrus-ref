@@ -56,7 +56,7 @@ It prints `Debug.Notification  (function)`, then `Flags: DebugOnly`, and exits w
 
       python -I sf_papyrus_ref.py check tests/fixtures --allow Debug.Trace
 
-  This finds `Debug.Notification` (DebugOnly), `Utility.Wait` in a loop (Latent) and `Game.Warning` (BetaOnly) in each of the two files, and exits with code 1.
+  In each of the two files, it finds `Debug.Notification` and `Debug.MessageBox` (DebugOnly; the second is in a property's Set handler), `Utility.Wait` in a loop (Latent) and `Game.Warning` (BetaOnly). It exits with code 1.
 
 - Before a Bethesda Creations upload, check with DebugOnly as an error:
 

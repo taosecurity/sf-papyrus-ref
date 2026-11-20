@@ -242,7 +242,8 @@ def main(argv=None):
         print(f"Old wiki revision {old.get('wiki_revision')}, new {doc['wiki_revision']}; {len(lines)} changes.")
         return 0
     a.out.parent.mkdir(parents=True, exist_ok=True)
-    a.out.write_text(json.dumps(doc, indent=1, ensure_ascii=True) + "\n", encoding="utf-8", newline="\n")
+    with open(a.out, "w", encoding="utf-8", newline="\n") as f:  # Path.write_text has no newline before 3.10
+        f.write(json.dumps(doc, indent=1, ensure_ascii=True) + "\n")
     log.info("Wrote %s", a.out)
     return 0
 

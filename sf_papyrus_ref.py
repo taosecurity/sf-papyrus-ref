@@ -277,7 +277,7 @@ def local_only(local, query):
         for m in s["members"]:
             if m["name"].lower() == name.lower():
                 out.append({"script": s["name"], "name": m["name"], "kind": m["kind"], "signature": m["sig"],
-                            "source_flags": sorted(set(m["flags"]) | set(s["flags"]) & {"debugonly", "betaonly"}),
+                            "source_flags": sorted(effective_source_flags(s, m) & {"debugonly", "betaonly"}),
                             "file": s.get("file", "")})
     return out
 
@@ -447,11 +447,16 @@ def cmd_build_local(ref, a):
         print(f"Error: no .psc scripts in {path}. Pass the folder that holds Debug.psc, or ContentResources.zip.",
               file=sys.stderr)
         return 2
-    os.makedirs(os.path.dirname(os.path.abspath(a.cache)), exist_ok=True)
     tmp = a.cache + ".tmp"
-    with open(tmp, "w", encoding="utf-8", newline="\n") as f:
-        json.dump(doc, f, ensure_ascii=False)
-    os.replace(tmp, a.cache)
+    try:
+        os.makedirs(os.path.dirname(os.path.abspath(a.cache)), exist_ok=True)
+        with open(tmp, "w", encoding="utf-8", newline="\n") as f:
+            json.dump(doc, f, ensure_ascii=False)
+        os.replace(tmp, a.cache)
+    except OSError as e:
+        print(f"Error: could not write the local cache {a.cache} ({e.strerror or e}). "
+              "Pass --cache <a file in a folder you can write to>.", file=sys.stderr)
+        return 2
     n_members = sum(len(s["members"]) for s in doc["scripts"].values())
     official = sum(1 for s in ref.scripts if s in doc["scripts"])
     if a.json:
@@ -564,6 +569,20 @@ class Checker:
             return []  # the type is known from the user's sources and has no such member (another mod, SFSE)
         return [(e["script"], set(e["flags"]), "name only") for e in self.ref.by_name.get(name.lower(), [])]
 
+    def resolve_bare(self, chain, imports, name):
+        """A call written without an object: the script's own chain first, then each imported script."""
+        for s in chain:
+            flags, exists = self.flags_on(s, name)
+            if exists:
+                return [(self.ref.script_name(s) or s, flags, "exact")]
+        for s in imports:
+            flags, exists = self.flags_on(s, name)
+            if exists:
+                return [(self.ref.script_name(s) or s, flags, "exact")]
+        if chain and any(s.lower() in self.local.scripts for s in chain) and not imports:
+            return []
+        return [(e["script"], set(e["flags"]), "name only") for e in self.ref.by_name.get(name.lower(), [])]
+
     def chain_of(self, type_name, own=None):
         """Type chain for a type name; own = (name, extends) of the script being checked."""
         t = (type_name or "").rstrip("[]").strip()
@@ -609,6 +628,11 @@ class Checker:
         findings = []
         for c in info["calls"]:
             kind, val = c["target"]
+            if kind == "self" and c["target"] == ("self", "") and c["name"].lower() not in info["own"]:
+                # A bare Name(...) is this script's or a parent's function, or a global from an Import line.
+                cands = self.resolve_bare(self.chain_of(own[0], own), info["imports"], c["name"])
+                findings += self.judge(path, c["line"], c["name"], cands, c["loop"])
+                continue
             if kind == "self":
                 if c["name"].lower() in info["own"]:
                     continue
@@ -646,7 +670,8 @@ class Checker:
                     off = args[0][1] if op == "jmp" else args[1][1] if op in ("jmpt", "jmpf") else None
                     if isinstance(off, int) and off < 0:
                         loops.append((i + off, i))
-                lines = pex["lines"].get((obj["name"].lower(), fn["state"].lower(), fn["name"].lower()), [])
+                dname, dtype = fn["debug"]
+                lines = pex["lines"].get((obj["name"].lower(), fn["state"].lower(), dname.lower(), dtype), [])
                 for i, (op, args) in enumerate(fn["code"]):
                     if op not in ("callmethod", "callstatic", "callparent"):
                         continue
@@ -774,7 +799,12 @@ def mcp_call(ref, base, name, args):
         paths = args.get("paths")
         if not isinstance(paths, list) or not paths:
             return {"error": "paths must be a list of .psc or .pex files or folders"}, True
-        ns.paths, ns.allow = [str(p) for p in paths], [str(x) for x in args.get("allow") or []]
+        allow = args.get("allow") or []
+        if isinstance(allow, str):
+            allow = [allow]
+        if not isinstance(allow, list):
+            return {"error": "allow must be a list of Script.Name strings"}, True
+        ns.paths, ns.allow = [str(p) for p in paths], [str(x) for x in allow]
         ns.creations, ns.strict, fn = bool(args.get("creations")), False, cmd_check
     else:
         return {"error": f"unknown tool {name}"}, True
@@ -824,47 +854,73 @@ def cmd_mcp(ref, a):
         if not isinstance(msg, dict):
             mcp_reply(None, error={"code": -32600, "message": "Invalid request"})
             continue
-        method, msg_id, params = msg.get("method"), msg.get("id"), msg.get("params") or {}
+        method, msg_id, params = msg.get("method"), msg.get("id"), msg.get("params")
+        if params is None:
+            params = {}
         log.debug("MCP %s %s", method, json.dumps(params)[:300])
         if msg_id is None:
             continue  # a notification, such as notifications/initialized
-        if method == "initialize":
-            asked = params.get("protocolVersion")
-            mcp_reply(msg_id, {"protocolVersion": asked if asked in MCP_VERSIONS else MCP_VERSIONS[0],
-                               "capabilities": {"tools": {}},
-                               "serverInfo": {"name": "sf-papyrus-ref", "version": VERSION},
-                               "instructions": "Offline Starfield Papyrus reference. Look a name up before using "
-                                               "it; a name that is not found is not in the official list."})
-        elif method == "ping":
-            mcp_reply(msg_id, {})
-        elif method == "tools/list":
-            mcp_reply(msg_id, {"tools": MCP_TOOLS})
-        elif method == "tools/call":
-            name, args = params.get("name"), params.get("arguments") or {}
-            if not isinstance(args, dict):
-                mcp_reply(msg_id, error={"code": -32602, "message": "arguments must be an object"})
-                continue
-            try:
-                result, is_error = mcp_call(ref, a, name, args)
-            except (KeyError, TypeError) as e:
-                result, is_error = {"error": f"missing or bad argument: {e}"}, True
-            mcp_reply(msg_id, {"content": [{"type": "text", "text": json.dumps(result, ensure_ascii=False)}],
-                               "structuredContent": result, "isError": is_error})
-        else:
-            mcp_reply(msg_id, error={"code": -32601, "message": f"Method not found: {method}"})
+        if not isinstance(params, dict):
+            mcp_reply(msg_id, error={"code": -32602, "message": "params must be an object"})
+            continue
+        try:
+            mcp_handle(ref, a, method, msg_id, params)
+        except Exception as e:  # one bad request must never stop the server
+            log.error("MCP request %s failed: %r", method, e)
+            mcp_reply(msg_id, error={"code": -32603, "message": f"Internal error: {e}"})
     return 0
 
 
-def setup_logging(a):
-    handlers = []
-    if a.verbose:
-        handlers.append(logging.StreamHandler(sys.stderr))
-    if a.log:
-        handlers.append(logging.FileHandler(a.log, mode="w", encoding="utf-8"))
-    if handlers:
-        logging.basicConfig(level=logging.DEBUG, format="%(levelname)s %(message)s", handlers=handlers)
+def mcp_handle(ref, a, method, msg_id, params):
+    """Answer one MCP request that has an id."""
+    if method == "initialize":
+        asked = params.get("protocolVersion")
+        mcp_reply(msg_id, {"protocolVersion": asked if asked in MCP_VERSIONS else MCP_VERSIONS[0],
+                           "capabilities": {"tools": {}},
+                           "serverInfo": {"name": "sf-papyrus-ref", "version": VERSION},
+                           "instructions": "Offline Starfield Papyrus reference. Look a name up before using "
+                                           "it; a name that is not found is not in the official list."})
+    elif method == "ping":
+        mcp_reply(msg_id, {})
+    elif method == "tools/list":
+        mcp_reply(msg_id, {"tools": MCP_TOOLS})
+    elif method == "tools/call":
+        name, args = params.get("name"), params.get("arguments") or {}
+        if not isinstance(args, dict):
+            mcp_reply(msg_id, error={"code": -32602, "message": "arguments must be an object"})
+            return
+        try:
+            result, is_error = mcp_call(ref, a, name, args)
+        except (KeyError, TypeError) as e:
+            result, is_error = {"error": f"missing or bad argument: {e}"}, True
+        mcp_reply(msg_id, {"content": [{"type": "text", "text": json.dumps(result, ensure_ascii=False)}],
+                           "structuredContent": result, "isError": is_error})
     else:
-        log.addHandler(logging.NullHandler())
+        mcp_reply(msg_id, error={"code": -32601, "message": f"Method not found: {method}"})
+
+
+def setup_logging(a):
+    """Warnings always reach stderr; --verbose adds the details; --log writes everything to a file.
+    Returns an error message when the log file can't be opened."""
+    for h in list(log.handlers):
+        log.removeHandler(h)
+        h.close()
+    log.setLevel(logging.DEBUG)
+    log.propagate = False
+    fmt = logging.Formatter("%(levelname)s %(message)s")
+    console = logging.StreamHandler(sys.stderr)
+    console.setLevel(logging.DEBUG if a.verbose else logging.WARNING)
+    console.setFormatter(fmt)
+    log.addHandler(console)
+    if a.log:
+        try:
+            fh = logging.FileHandler(a.log, mode="w", encoding="utf-8")
+        except OSError as e:
+            return (f"could not open the log file {a.log} ({e.strerror or e}). "
+                    "Pass --log <a file in a folder you can write to>.")
+        fh.setFormatter(fmt)
+        log.addHandler(fh)
+    return None
 
 
 def parser():
@@ -920,7 +976,10 @@ def main(argv=None):
     if not a.cmd:
         ap.print_help()
         return 2
-    setup_logging(a)
+    problem = setup_logging(a)
+    if problem:
+        print(f"Error: {problem}", file=sys.stderr)
+        return 2
     if not a.quiet:
         print(BYLINE, file=sys.stderr)
     try:
@@ -935,17 +994,28 @@ def main(argv=None):
 
 def run():
     """main() for the command line: a reader that stops early (head, Select-Object -First) ends the run quietly."""
+    def closed_pipe(e):
+        # Windows reports a closed pipe as EINVAL with no file name; a real file error always names its file.
+        return isinstance(e, BrokenPipeError) or (e.errno == 22 and e.filename is None)
+
+    def silence():
+        try:
+            os.dup2(os.open(os.devnull, os.O_WRONLY), sys.stdout.fileno())
+        except OSError:
+            pass
     try:
         code = main()
+    except OSError as e:
+        if not closed_pipe(e):
+            raise
+        silence()
+        return 0
+    try:
         sys.stdout.flush()
-    except (BrokenPipeError, OSError) as e:
-        if isinstance(e, BrokenPipeError) or getattr(e, "errno", None) == 22:
-            try:
-                os.dup2(os.open(os.devnull, os.O_WRONLY), sys.stdout.fileno())
-            except OSError:
-                pass
-            return 0
-        raise
+    except OSError as e:
+        if not closed_pipe(e):
+            raise
+        silence()
     return code
 
 
