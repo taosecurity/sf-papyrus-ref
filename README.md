@@ -1,16 +1,39 @@
 # sf-papyrus-ref
 
-**Does this Papyrus function exist in Starfield, on which script, and is it safe on Xbox?** sf-papyrus-ref answers that offline, from the command line, in about a tenth of a second. It also checks your mod's scripts for calls that never work on consoles or should never ship.
+sf-papyrus-ref answers "does this Papyrus function exist in Starfield, on which script, and is it safe on Xbox?" offline, from the command line, in about a tenth of a second. It also checks your mod's scripts for calls that never work on consoles or should never ship.
+
+Download the latest zip from the [releases page](https://github.com/taosecurity/sf-papyrus-ref/releases), unzip it, open a Command Prompt in the folder and look a name up:
+
+```
+sf-papyrus-ref lookup Debug.Notification
+```
+
+For AI assistants: step-by-step instructions are in [AGENTS.md](AGENTS.md). They include the MCP server setup for Claude Code.
+
+## Example
+
+Look up a function. This run is on a fresh install, before `build-local`, so it shows the official flags and wiki page but no signature yet:
 
 ```
 > sf-papyrus-ref lookup Debug.Notification
+sf-papyrus-ref 0.1.0 by Richard Bejtlich - MIT - https://github.com/taosecurity/sf-papyrus-ref
 Debug.Notification  (function)
-  Signature (your sources): Function Notification(string asNotificationText) native global
   Flags: DebugOnly
   Official page: https://starfield.creationkit.bethesda.net/w/index.php?title=Notification_-_Debug
+Run 'sf-papyrus-ref build-local' once to see signatures from your own Creation Kit sources.
 ```
 
-**For AI assistants:** read [AGENTS.md](AGENTS.md). It gives install and use steps you can follow as written, including the MCP server setup for Claude Code.
+Check a script. The release zip holds a small made-up test script in `tests\fixtures`, as source (`.psc`) and compiled (`.pex`):
+
+```
+> sf-papyrus-ref check tests\fixtures\SfprFixture.psc --allow Debug.Trace
+sf-papyrus-ref 0.1.0 by Richard Bejtlich - MIT - https://github.com/taosecurity/sf-papyrus-ref
+tests\fixtures\SfprFixture.psc:8: warning: Debug.Notification is DebugOnly: it does nothing in release builds on Xbox and PlayStation
+tests\fixtures\SfprFixture.psc:11: warning: Utility.Wait is Latent and is called inside a loop: each pass waits for it to finish
+tests\fixtures\SfprFixture.psc:15: error: Game.Warning is BetaOnly: it is meant for beta builds and should never ship
+tests\fixtures\SfprFixture.psc:31: warning: Debug.MessageBox is DebugOnly: it does nothing in release builds on Xbox and PlayStation
+Checked 1 files: 1 errors, 3 warnings.
+```
 
 ## What it does for you
 
@@ -27,26 +50,98 @@ The five flags come from the official wiki: Latent, Non-delayed, DebugOnly, Beta
 
 ## Install
 
-You need Python 3.9 or newer, on Windows or Linux. There's nothing else to install: it uses the standard library only.
+sf-papyrus-ref needs Python 3.9 or newer, on Windows or Linux. There's nothing else to install, because it uses Python's standard library only.
 
-1. Download `sf-papyrus-ref-0.1.0.zip` and its `.sha256` file from the [releases page](https://github.com/taosecurity/sf-papyrus-ref/releases).
-2. Check the zip. On Windows, run `certutil -hashfile sf-papyrus-ref-0.1.0.zip SHA256` and compare the result with the `.sha256` file. On Linux, run `sha256sum -c sf-papyrus-ref-0.1.0.zip.sha256`.
-3. Unzip it anywhere, for example `C:\Tools\sf-papyrus-ref`.
-4. Try it from that folder:
+1. Install Python 3.11 or newer from [python.org](https://www.python.org/downloads/). On the first screen of the installer, tick **Add python.exe to PATH**. To check that it worked, open a new Command Prompt and type `python --version`. It should print a version number.
+2. Download `sf-papyrus-ref-0.1.0.zip` and its `.sha256` file from the [releases page](https://github.com/taosecurity/sf-papyrus-ref/releases).
+3. Check the zip. On Windows, run `certutil -hashfile sf-papyrus-ref-0.1.0.zip SHA256` and compare the result with the `.sha256` file. On Linux, run `sha256sum -c sf-papyrus-ref-0.1.0.zip.sha256`.
+4. Unzip it anywhere, for example `C:\Tools\sf-papyrus-ref`. Keep its files together.
+5. Open the unzipped folder in File Explorer, click the address bar at the top, type `cmd` and press Enter. A Command Prompt window opens in that folder, ready for the commands below.
+6. Try it:
 
    ```
    sf-papyrus-ref lookup Utility.Wait
    ```
 
-   On Linux, use `./sf-papyrus-ref lookup Utility.Wait`. The launchers simply run `python -I sf_papyrus_ref.py` with your arguments, so `python -I sf_papyrus_ref.py lookup Utility.Wait` works too.
+On Linux, use `./sf-papyrus-ref lookup Utility.Wait`. The launchers simply run `python -I sf_papyrus_ref.py` with your arguments, so `python -I sf_papyrus_ref.py lookup Utility.Wait` works too.
 
-## Read signatures from your own Creation Kit (recommended)
+## Words used here
+
+- **Papyrus:** Starfield's scripting language. Scripts are written as `.psc` source files and compiled into `.pex` files that the game runs. A mod's scripts are what make things happen in the game, such as starting a quest or giving an item.
+- **Function, event and struct:** a function is something a script can call (`Debug.Notification`), an event is something the game calls on a script when a thing happens (`OnActivate`), and a struct is a small group of named values.
+- **Creation Kit (CK):** Bethesda's official editor for making Starfield mods. Its download includes the source of the game's own scripts, in `Tools\ContentResources.zip`.
+- **Latent:** a function that makes the script wait until it finishes, such as `Utility.Wait`.
+- **DebugOnly and BetaOnly:** functions that work only in debug or beta builds of the game. On Xbox and PlayStation they do nothing.
+- **SFSE:** the Starfield Script Extender, which adds features the game lacks, on PC only. Its functions aren't on the official list.
+- **MCP (Model Context Protocol):** a standard way for AI assistants to call a tool.
+
+## lookup: where a name lives
+
+Give it a name, or a script and a name. The Example above shows a name that exists. A misspelled name is reported as not found, with near matches, and exits with code 1:
+
+```
+> sf-papyrus-ref lookup Notifcation
+sf-papyrus-ref 0.1.0 by Richard Bejtlich - MIT - https://github.com/taosecurity/sf-papyrus-ref
+Notifcation: Not in the official list. It may be a script extender (SFSE) function, a function from another mod's script, or a made-up name. The Papyrus compiler is the final judge.
+Did you mean: Notification, OnStoryInfection, GetClassification, IsInFaction, GetLocation
+```
+
+## script: everything on one script
+
+`script` lists a script's functions, events and structs, with each one's flags:
+
+```
+> sf-papyrus-ref script Utility
+sf-papyrus-ref 0.1.0 by Richard Bejtlich - MIT - https://github.com/taosecurity/sf-papyrus-ref
+Utility - Functions (25)
+  CallGlobalFunction  [Latent, Non-delayed]
+  CallGlobalFunctionNoWait  [Non-delayed]
+  ExpiryDay
+  GameTimeToString
+...
+  Wait  [Latent]
+...
+```
+
+## list: everything with one flag
+
+`list --flag` takes latent, nondelayed, debugonly, betaonly or invsafe. Add `--script` to look at one script only:
+
+```
+> sf-papyrus-ref list --flag latent --script Utility
+sf-papyrus-ref 0.1.0 by Richard Bejtlich - MIT - https://github.com/taosecurity/sf-papyrus-ref
+Utility.CallGlobalFunction  (function)
+Utility.Wait  (function)
+Utility.WaitGameTime  (function)
+Utility.WaitMenuPause  (function)
+4 entries flagged Latent on Utility.
+```
+
+## data: where the list comes from
+
+```
+> sf-papyrus-ref data
+sf-papyrus-ref 0.1.0 by Richard Bejtlich - MIT - https://github.com/taosecurity/sf-papyrus-ref
+Data file: ...\sf-papyrus-ref\data\official-names.json
+Official wiki revision 8392, list built 2026-11-20.
+103 scripts, 1390 functions, 260 events, 3 structs.
+Flags: Latent 63, Non-delayed 194, DebugOnly 56, BetaOnly 2, Inventory-safe 37
+Names and flag categories from the official Starfield Creation Kit wiki (starfield.creationkit.bethesda.net). Names, flags and links only: no wiki text, no signatures and no game script sources.
+```
+
+## build-local: read signatures from your own Creation Kit (recommended)
 
 The shipped list holds names and flags only. Run this once to add signatures and parent scripts from your own Creation Kit:
 
 ```
-sf-papyrus-ref build-local
+> sf-papyrus-ref build-local
+sf-papyrus-ref 0.1.0 by Richard Bejtlich - MIT - https://github.com/taosecurity/sf-papyrus-ref
+Read 1702 scripts (8381 functions, events and structs) from C:\Program Files (x86)\Steam\steamapps\common\Starfield\Tools\ContentResources.zip.
+102 of the 103 scripts on the official list are among them.
+Saved the local cache to C:\Users\<you>\AppData\Local\sf-papyrus-ref\local.json (it stays on this machine; never share it).
 ```
+
+(The user name in the cache path is replaced with `<you>`.)
 
 It finds `Tools\ContentResources.zip` in your Steam Starfield folder (in any Steam library) and reads the script sources inside it without extracting them. That takes about a second. It saves a cache to `%LOCALAPPDATA%\sf-papyrus-ref\local.json` on Windows, or `~/.cache/sf-papyrus-ref/local.json` on Linux. The cache is made from Bethesda's files, so keep it on your machine.
 
@@ -56,21 +151,33 @@ It finds `Tools\ContentResources.zip` in your Steam Starfield folder (in any Ste
 
 Once the cache exists, these commands improve:
 
-- `lookup` and `script` show each signature, and `lookup` also finds functions on the game's other scripts, such as quest scripts.
+- `lookup` and `script` show each signature, and `lookup` also finds functions on the game's other scripts, such as quest scripts. After `build-local`, the Example lookup gains the line `Signature (your sources): Function Notification(string asNotificationText) native global`.
 - `check` follows parent scripts. For example, a call to `MoveTo` on an Actor is matched to `ObjectReference.MoveTo`.
-- `diff` compares the official list with your sources and shows names and flags present in only one of them. The sources mark more functions DebugOnly than the wiki does, and `check` uses both.
+- `diff` compares the official list with your sources (see below).
 
-## Check your scripts
+## diff: the official list against your sources
+
+`diff` shows names and flags present in only one of the two lists. The sources mark more functions DebugOnly than the wiki does, and `check` uses both.
+
+```
+> sf-papyrus-ref diff --quiet
+Official list (wiki revision 8392) against your sources (C:\Program Files (x86)\Steam\steamapps\common\Starfield\Tools\ContentResources.zip).
+Scripts on the official list but not in your sources: 1: Array
+Names on the wiki but not in your sources: 2
+  Game.EnableFastTravel
+  ObjectReference.OnDeath
+Names in your sources but not on the wiki: 497
+  ActiveMagicEffect.OnActivate
+...
+```
+
+## check: check your scripts
 
 ```
 sf-papyrus-ref check "C:\MyMod\Scripts\Source" --allow Debug.Trace
 ```
 
-```
-Source\MyQuest.psc:42: warning: Debug.Notification is DebugOnly: it does nothing in release builds on Xbox and PlayStation
-Source\MyQuest.psc:87: warning: Utility.Wait is Latent and is called inside a loop: each pass waits for it to finish
-Checked 6 files: 0 errors, 2 warnings.
-```
+The Example above shows its output on the bundled test script.
 
 - Give it files or folders (folders are searched below them), holding `.psc` sources or compiled `.pex` scripts.
 - `--allow Script.Name` never reports that call. `--allow Debug.Trace` suits mods that log on purpose, because a Trace that vanishes on a console does no harm. Repeat the option, or separate names with commas.
@@ -102,7 +209,9 @@ The agent then has four read-only tools: `papyrus_lookup`, `papyrus_script`, `pa
 | `check <paths> [--allow X] [--creations] [--strict]` | BetaOnly, DebugOnly and Latent-in-loop calls | 0 clean, 1 findings |
 | `mcp` | Read-only MCP server on stdin and stdout | 0 when the client closes it |
 
-Exit code 2 always means a problem with the input: a bad option, a file that could not be read, or no sources found. Every command takes `--json`, `--quiet` (no byline), `--verbose`, `--log <file>`, `--cache <file>`, `--no-local` and `--data <file>`. `--version` shows the version and credits.
+Exit code 2 always means a problem with the input: a bad option, a file that could not be read, or no sources found.
+
+Every command takes `--json`, `--quiet` (no byline), `--verbose`, `--log <file>`, `--cache <file>`, `--no-local` and `--data <file>`. `--version` shows the version and credits.
 
 ## Logs
 
@@ -125,8 +234,16 @@ The tool ships **no** text from the wiki, **no** signatures and **no** script so
 
 When Bethesda updates the wiki, a new release of the name list follows. `sf-papyrus-ref data` shows which revision you have. Maintainers rebuild the list with `python -I tools/build_names.py --mirror <saved copy of the wiki> --diff`.
 
-## License and credits
+## Found a mistake?
 
-sf-papyrus-ref is by Richard Bejtlich and is free software under the [MIT license](LICENSE), with no warranty. The function and event names and their flags are from Bethesda's official Starfield Creation Kit wiki. Starfield, the Creation Kit and Papyrus belong to Bethesda Softworks. This is a community tool, and Bethesda neither made nor endorses it. The `.pex` reader is adapted from [sf-pex-tools](https://github.com/taosecurity/sf-pex-tools). [PRIVACY.md](PRIVACY.md) says what the tool reads and writes.
+Open an issue: https://github.com/taosecurity/sf-papyrus-ref/issues
 
-Report problems at https://github.com/taosecurity/sf-papyrus-ref/issues.
+## Credits and License
+
+- sf-papyrus-ref is by Richard Bejtlich. It uses only the [Python](https://www.python.org/) standard library.
+- The function and event names and their flags are from Bethesda's [official Starfield Creation Kit wiki](https://starfield.creationkit.bethesda.net/).
+- The `.pex` reader is adapted from [sf-pex-tools](https://github.com/taosecurity/sf-pex-tools).
+- Starfield, the Creation Kit and Papyrus belong to Bethesda Softworks. This is a community tool, and Bethesda neither made nor endorses it.
+- [PRIVACY.md](PRIVACY.md) says what the tool reads and writes.
+
+sf-papyrus-ref is free software under the [MIT License](LICENSE), with no warranty.
