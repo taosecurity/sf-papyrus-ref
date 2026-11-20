@@ -139,6 +139,24 @@ class Local(unittest.TestCase):
         # Latent is never a keyword in the sources (only the wiki marks it), so Slow gives no finding.
         self.assertEqual(got, {("Parent.Peek", "debugonly", "exact")})
 
+    def test_lookup_follows_parents(self):
+        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+            ref_mod.main(["build-local", "--sources", self.src, "--cache", self.cache, "--quiet"])
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(io.StringIO()):
+            code = ref_mod.main(["lookup", "Child.Peek", "--cache", self.cache, "--json", "--quiet"])
+        j = json.loads(out.getvalue())
+        self.assertEqual(code, 0)
+        self.assertEqual(j["inherited_from"], "Parent")
+        self.assertEqual(j["matches"][0]["source_flags"], ["debugonly"])
+
+    def test_lookup_inherited_without_cache(self):
+        code, out, _ = run_real("lookup", "Actor.GetValue", "--json", "--no-local")
+        j = json.loads(out)
+        self.assertEqual(code, 1)
+        self.assertIn("ObjectReference", j["on_other_scripts"])
+        self.assertIn("inherits", j["note"])
+
     def test_build_local_bad_path(self):
         out, err = io.StringIO(), io.StringIO()
         with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):

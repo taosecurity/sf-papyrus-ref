@@ -282,9 +282,33 @@ def local_only(local, query):
     return out
 
 
+def inherited(ref, local, query):
+    """For Script.Name not on Script itself: (entries on the nearest parent that has it, that parent's name)."""
+    if "." not in query:
+        return [], ""
+    script, _, name = query.strip().rpartition(".")
+    for parent in local.chain(script)[1:]:
+        hits = ref.lookup(f"{parent}.{name}")
+        if hits:
+            return hits, parent
+        m = local.member(parent, name)
+        if m:
+            s = local.scripts[parent.lower()]
+            return [{"script": s["name"], "name": m["name"], "kind": m["kind"], "flags": [], "wiki": "",
+                     "source_flags": sorted(effective_source_flags(s, m) & {"debugonly", "betaonly"})}], parent
+    return [], ""
+
+
 def cmd_lookup(ref, a):
     local = a.local
     hits = [dict(e) for e in ref.lookup(a.name)]
+    via = ""
+    if not hits:
+        found, via = inherited(ref, local, a.name)
+        hits = [dict(e, inherited_by=a.name.strip().rpartition(".")[0]) for e in found]
+    elsewhere = []
+    if not hits and "." in a.name:
+        elsewhere = sorted({e["script"] for e in ref.lookup(a.name.strip().rpartition(".")[2])})
     for e in hits:
         m = local.member(e["script"], e["name"])
         if m:
@@ -293,22 +317,35 @@ def cmd_lookup(ref, a):
     extra = [x for x in local_only(local, a.name) if (x["script"].lower(), x["name"].lower()) not in official]
     found = bool(hits or extra)
     near = [] if found else ref.near(a.name)
+    note = ""
+    if not found:
+        note = NOT_FOUND_HINT
+        if elsewhere:
+            note = (f"Not declared on {a.name.strip().rpartition('.')[0]} in the official list, but these scripts "
+                    f"have it: {', '.join(elsewhere)}. If the script extends one of them, it inherits it."
+                    + ("" if local.doc else " Run build-local so lookups follow parent scripts."))
     if a.json:
-        out_json({**meta(ref), "query": a.name, "found": found, "matches": hits, "local_only": extra, "near": near,
-                  "local_cache": local.path if local.doc else None,
-                  "note": "" if found else NOT_FOUND_HINT})
+        out_json({**meta(ref), "query": a.name, "found": found, "inherited_from": via or None, "matches": hits,
+                  "local_only": extra, "on_other_scripts": elsewhere, "near": near,
+                  "local_cache": local.path if local.doc else None, "note": note})
         return 0 if found else 1
     if not found:
-        print(f"{a.name}: {NOT_FOUND_HINT}")
-        if near:
+        print(f"{a.name}: {note}")
+        if near and not elsewhere:
             print("Did you mean: " + ", ".join(near))
         return 1
+    if via:
+        print(f"{a.name} is inherited from {via}:")
     for e in hits:
         print(f"{e['script']}.{e['name']}  ({e['kind']})")
         if e.get("signature"):
             print(f"  Signature (your sources): {e['signature']}")
-        print(f"  Flags: {flag_text(e)}")
-        print(f"  Official page: {e['wiki']}")
+        if e.get("wiki"):
+            print(f"  Flags: {flag_text(e)}")
+            print(f"  Official page: {e['wiki']}")
+        else:
+            print("  Not on the official list; found in your sources"
+                  + (f" (marked {', '.join(FLAGS[f] for f in e['source_flags'])})" if e.get("source_flags") else ""))
     for x in extra:
         print(f"{x['script']}.{x['name']}  ({x['kind']}, in your sources only: {x['file']})")
         print(f"  Signature (your sources): {x['signature']}")
@@ -896,5 +933,21 @@ def main(argv=None):
             "build-local": cmd_build_local, "diff": cmd_diff, "check": cmd_check, "mcp": cmd_mcp}[a.cmd](ref, a)
 
 
+def run():
+    """main() for the command line: a reader that stops early (head, Select-Object -First) ends the run quietly."""
+    try:
+        code = main()
+        sys.stdout.flush()
+    except (BrokenPipeError, OSError) as e:
+        if isinstance(e, BrokenPipeError) or getattr(e, "errno", None) == 22:
+            try:
+                os.dup2(os.open(os.devnull, os.O_WRONLY), sys.stdout.fileno())
+            except OSError:
+                pass
+            return 0
+        raise
+    return code
+
+
 if __name__ == "__main__":
-    sys.exit(main())
+    sys.exit(run())
