@@ -1,0 +1,3 @@
+#!/bin/sh
+# sf-papyrus-ref launcher for Linux: runs sf_papyrus_ref.py from this folder with the same arguments.
+exec python3 -I "$(dirname "$0")/sf_papyrus_ref.py" "$@"
