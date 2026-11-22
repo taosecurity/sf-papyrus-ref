@@ -579,8 +579,10 @@ def content_section(scripts, game, ck):
         label = labels.get(owner, owner[0].upper() + owner[1:])
         items.append(f"<li>{esc(label)} has {n} script{'s' if n != 1 else ''} here.</li>")
     missing = []
-    def has(marker):  # the marker at the start of a name or namespace part, or after an underscore (QF_SFBGS001_...)
-        pat = re.compile(rf"(?:^|[:_]){marker}")
+    def has(marker):
+        # The marker as a whole word part: at the start or after ":" or "_", and followed by "_", ":" or the end
+        # (SFBGS001:..., QF_SFBGS001_...), so a name such as QF_SFTerrainSurvey never counts.
+        pat = re.compile(rf"(?:^|[:_]){marker}(?:[_:]|$)")
         return any(pat.search(k) or pat.search(folder_of(s["file"]).lower().replace("/", ":"))
                    for k, s in scripts.items())
     if not has("sfbgs001"):
@@ -603,20 +605,30 @@ def walkthrough_section(scripts, known):
     if not s:
         return ""
     lines = s["text"].replace("\r\n", "\n").replace("\r", "\n").split("\n")
+    # Lines that hold no code: blank lines, ; comments and every line of a ;/ ... /; block comment.
+    quiet, in_block = set(), False
+    for i, ln in enumerate(lines):
+        st = ln.strip()
+        if in_block:
+            quiet.add(i)
+            in_block = "/;" not in st
+        elif st.startswith(";/"):
+            quiet.add(i)
+            in_block = "/;" not in st[2:]
+        elif not st or st.startswith(";"):
+            quiet.add(i)
+    decl = re.compile(r"(?i)^\s*(group|struct|state|auto\s+state|property|event|function)\b|\bproperty\b|\bfunction\b|\bevent\b")
     rows, pos, last = [], 0, None
     for pattern, text in WALK_STEPS:
         if pattern == DOC_NEXT:
-            # A documentation comment belongs to the line just before it: look only at the next non-blank line.
-            start = last + 1 if last is not None else pos
-            nxt = next((i for i in range(start, len(lines))
-                        if lines[i].strip() and not lines[i].lstrip().startswith(";")), None)
-            if nxt is not None and last is None:
-                # No anchor line: take the first doc comment before the next declaration.
-                nxt = next((i for i in range(start, len(lines)) if re.search(r"^\s*\{", lines[i])
-                            or re.search(r"(?i)\b(property|event|function)\b", lines[i])), None)
+            # A documentation comment belongs to the line just before it: look at the next line that holds code.
+            if last is not None:
+                nxt = next((i for i in range(last + 1, len(lines)) if i not in quiet), None)
+            else:
+                # No anchor line: the first doc comment before the next declaration.
+                nxt = next((i for i in range(pos, len(lines)) if i not in quiet
+                            and (re.search(r"^\s*\{", lines[i]) or decl.search(lines[i]))), None)
             hit = nxt if nxt is not None and re.search(r"^\s*\{", lines[nxt]) else None
-            if hit is not None:
-                pos = max(pos, hit)
         else:
             hit = next((i for i in range(pos, len(lines)) if re.search(pattern, lines[i])), None)
             last = hit
@@ -810,7 +822,7 @@ def read_manifest(path, log):
 
 def update_manifest(out, scripts, stamp, game, ck, log, fragments=False):
     """Compare this build's scripts with the last build's (kept in a hidden file in the site folder), record a
-    What's new entry when anything changed, and return the recorded builds, oldest first (at most 10)."""
+    What's new entry when anything changed, and return (the recorded builds, oldest first and at most 10; the game version; the Creation Kit version)."""
     path = os.path.join(out, MANIFEST)
     prev = read_manifest(path, log)
     now = {}
@@ -819,7 +831,7 @@ def update_manifest(out, scripts, stamp, game, ck, log, fragments=False):
         now[key] = [s["name"], hashlib.sha1(text.encode("utf-8")).hexdigest()]
     builds = prev["builds"] if prev else []
     ckt = f"the Creation Kit {ck}" if ck else "your Creation Kit"
-    if not prev:
+    if not prev or not builds:
         entry = {"built": stamp, "game": game, "ck": ck, "fragments": fragments,
                  "text": f"The site was built for the first time, from the sources in {ckt} ({len(now)} scripts)."}
     else:
@@ -828,7 +840,9 @@ def update_manifest(out, scripts, stamp, game, ck, log, fragments=False):
         removed = sorted(old[k][0] for k in old.keys() - now.keys())
         changed = sorted(now[k][0] for k in now.keys() & old.keys() if now[k][1] != old[k][1])
         last = builds[-1] if builds else {}
-        # A version counts as changed only when both builds could read it (a copied zip has no .exe next to it).
+        # A version this build reads counts as changed when it differs from the last one, including a version read
+        # for the first time. A version this build can't read (a copied zip has no .exe next to it) never counts,
+        # and the last known one is kept.
         versions = any(new and new != last.get(k) for k, new in (("game", game), ("ck", ck)))
         game, ck = game or last.get("game"), ck or last.get("ck")  # keep a known version when this build can't read it
         ckt = f"the Creation Kit {ck}" if ck else "your Creation Kit"
@@ -853,7 +867,7 @@ def update_manifest(out, scripts, stamp, game, ck, log, fragments=False):
         write(path, json.dumps({"format": 1, "builds": builds, "scripts": now}, ensure_ascii=False))
     except OSError as e:
         log.warning("Could not save %s (%s); What's new will not know about this build.", path, e)
-    return builds
+    return builds, game, ck
 
 
 def write(path, text):
@@ -891,7 +905,8 @@ def build(pscread, sources_iter, sources_label, out, official, stamp, log, asset
     game, ck = find_versions(sources_label)
     log.info("Game version %s, Creation Kit version %s", game or "unknown", ck or "unknown")
     fragments = any("fragments" in folder_of(s["file"]).lower().split("/") for s in scripts.values())
-    builds = update_manifest(out, scripts, stamp, game, ck, log, fragments)
+    # The page shows the same versions What's new records (the last known ones when this build can't read them).
+    builds, game, ck = update_manifest(out, scripts, stamp, game, ck, log, fragments)
     write(os.path.join(out, "index.html"), home_page(scripts, children, folders, n_members, n_calls, sources_label,
                                                      stamp, game, ck, builds, fragments, asked_fragments))
     write(os.path.join(out, "az.html"), az_page(scripts, stamp))

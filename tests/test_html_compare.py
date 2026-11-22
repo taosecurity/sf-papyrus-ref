@@ -159,10 +159,24 @@ class Html(Base):
         self.assertIn("These sources hold no fragment scripts", home)
         self.assertNotIn("Run sf-papyrus-ref html with --include-fragments", home)
         # A version read for the first time is news even when no script changed.
-        builds = htmlsite.update_manifest(self.out, htmlsite.collect(ref_mod.pscread, ref_mod.iter_sources(self.src),
+        builds, _, _ = htmlsite.update_manifest(self.out, htmlsite.collect(ref_mod.pscread, ref_mod.iter_sources(self.src),
                                                                      ref_mod.log), "2026-11-22 10:00", "1.2.3.4",
                                           "1.2.3.4", ref_mod.log)
         self.assertIn("the Creation Kit 1.2.3.4", builds[-1]["text"])
+
+    def test_markers_and_block_comments(self):
+        htmlsite = ref_mod.htmlsite
+        src = os.path.join(self.src, "Scripts", "Source")
+        with open(os.path.join(src, "QF_SFTerrainSurvey_1.psc"), "w", encoding="utf-8") as f:
+            f.write("Scriptname QF_SFTerrainSurvey_1 extends Quest\n")  # not a Terran Armada script
+        with open(os.path.join(src, "DefaultSetGlobalOnTriggerEnter.psc"), "w", encoding="utf-8") as f:
+            f.write("Scriptname DefaultSetGlobalOnTriggerEnter extends ObjectReference\n"
+                    "GlobalVariable Property GlobalToSet Auto Const\n;/ a note\nmore /;\n{The global}\n")
+        call("html", "--sources", self.src, "--out", self.out)
+        home = html.unescape(self.page("index.html"))
+        self.assertIn("the Terran Armada Creation", home)  # still reported as missing
+        self.assertIn('href="s/DefaultSetGlobalOnTriggerEnter.html#L5"', home)  # found past the block comment
+        self.assertIsNotNone(htmlsite)
 
     def test_damaged_manifest_is_ignored(self):
         os.makedirs(self.out)
