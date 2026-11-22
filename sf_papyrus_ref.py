@@ -539,10 +539,14 @@ SITE_MARK = ".sf-papyrus-ref-site"
 def script_name(text):
     """The name on the script's Scriptname line, ignoring comments (so a commented-out line never counts)."""
     for _, line in pscread.clean(text):
-        m = pscread.SCRIPTNAME_RE.match(line)
+        m = SCRIPTNAME_START.match(line)
         if m:
-            return m.group("name")
+            return m.group(1)
     return ""
+
+
+# Only the start of the line: odd text after the name must not turn a named script into a file-name match.
+SCRIPTNAME_START = re.compile(r"(?i)^\s*scriptname\s+((?:[A-Za-z_][A-Za-z0-9_]*:)*[A-Za-z_][A-Za-z0-9_]*)\b")
 
 
 def default_site():
@@ -880,7 +884,7 @@ class Checker:
                     with open(f, "rb") as fh:
                         findings += self.check_pex(f, fh.read())
                 elif f.lower().endswith(".psc"):
-                    with open(f, encoding="utf-8", errors="replace") as fh:
+                    with open(f, encoding="utf-8-sig", errors="replace") as fh:
                         findings += self.check_psc(f, fh.read())
                 else:
                     errors.append(f"{f}: not a .psc or .pex file")

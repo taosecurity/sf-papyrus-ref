@@ -203,7 +203,7 @@ The pages hold Bethesda's script text, so **keep them on your PC or your home ne
 
 ## compare: which scripts came from the Creation Kit
 
-`compare` checks `.psc` files (files, folders or zips) against your Creation Kit's sources. It matches each script by its `Scriptname` line, and then by file name. Line endings and trailing spaces don't count as changes.
+`compare` checks `.psc` files (files, folders or zips) against your Creation Kit's sources. It matches each script by its `Scriptname` line. Only a file with no `Scriptname` line is matched by its file name, so your own script that happens to share a file name with one of Bethesda's is reported as not from the Creation Kit. Line endings and trailing spaces don't count as changes.
 
 ```
 > sf-papyrus-ref compare MyMod\Scripts\Source --all

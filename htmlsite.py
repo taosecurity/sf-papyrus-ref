@@ -30,8 +30,9 @@ KEYWORDS = {"as", "auto", "autoreadonly", "betaonly", "bool", "collapsed", "coll
 TOKEN_RE = re.compile(r"(?P<bc>;/.*?(?:/;|\Z))|(?P<doc>\{[^}]*(?:\}|\Z))|(?P<lc>;[^\n]*)"
                       r"|(?P<str>\"(?:\\.|[^\"\\\n])*\"?)|(?P<num>\b(?:0x[0-9A-Fa-f]+|\d+(?:\.\d+)?)\b)"
                       rf"|(?P<id>{IDENT}(?::{IDENT})*)", re.S)
-PROP_FLAGS = {"auto", "autoreadonly", "const", "mandatory", "hidden", "conditional"}
-STATE_RE =re.compile(rf"(?i)^\s*(?P<auto>auto\s+)?state\s+(?P<name>{IDENT})\s*$")
+PROP_FLAGS = {"auto": "Auto", "autoreadonly": "AutoReadOnly", "const": "Const", "mandatory": "Mandatory",
+              "hidden": "Hidden", "conditional": "Conditional"}
+STATE_RE = re.compile(rf"(?i)^\s*(?P<auto>auto\s+)?state\s+(?P<name>{IDENT})\s*$")
 CUSTOMEVENT_RE = re.compile(rf"(?i)^\s*customevent\s+(?P<name>{IDENT})\s*$")
 FLAG_LABELS = {"latent": "Latent", "nondelayed": "Non-delayed", "debugonly": "DebugOnly", "betaonly": "BetaOnly",
                "invsafe": "Inventory-safe", "native": "Native", "global": "Global"}
@@ -99,7 +100,7 @@ def read_script(pscread, rel, text):
             tail = re.sub(r'^\s*=\s*(?:"(?:\\.|[^"\\])*"|\S+)', "", line[m.end("name"):])
             words = [w for w in re.findall(IDENT, tail) if w.lower() in PROP_FLAGS]
             props.append({"name": m.group("name"), "type": m.group("type"), "line": num,
-                          "flags": " ".join(w.capitalize() for w in words)})
+                          "flags": " ".join(PROP_FLAGS[w.lower()] for w in words)})
     for mem in d["members"]:
         mem["line"], mem["state"] = lines.get(mem["name"].lower(), (0, ""))
     return {"name": d["name"], "extends": d["extends"], "flags": d["flags"], "members": d["members"],

@@ -49,16 +49,20 @@
   // Search: the index (assets/search-index.js) loads the first time the box is used.
   var KIND = { s: "script", f: "function", e: "event", t: "struct", p: "property" };
   var loading = false;
+  var failed = false;  // after a failed load, only focusing the box again retries (not every keystroke)
 
-  function loadIndex(then) {
+  function loadIndex(then, retry) {
     if (window.SFPR_INDEX) { then(); return; }
-    if (loading) return;
+    if (loading || (failed && !retry)) return;
+    failed = false;
     loading = true;
     var s = document.createElement("script");
     s.src = root + "assets/search-index.js";
     s.onload = then;
     s.onerror = function () {
-      loading = false;  // try again on the next keystroke
+      loading = false;  // try again the next time the box is focused
+      if (s.parentNode) s.parentNode.removeChild(s);
+      failed = true;
       var box = document.getElementById("sugg");
       if (!box) return;
       while (box.firstChild) box.removeChild(box.firstChild);
@@ -138,7 +142,7 @@
     var start = new URLSearchParams(window.location.search).get("q");
     if (start) { q.value = start; loadIndex(render); }
 
-    q.addEventListener("focus", function () { loadIndex(render); });
+    q.addEventListener("focus", function () { loadIndex(render, true); });
     q.addEventListener("input", function () { loadIndex(render); });
     q.addEventListener("keydown", function (ev) {
       var items = box.querySelectorAll("a");
