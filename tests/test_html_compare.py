@@ -159,7 +159,7 @@ class Html(Base):
         self.assertIn("These sources hold no fragment scripts", home)
         self.assertNotIn("Run sf-papyrus-ref html with --include-fragments", home)
         # A version read for the first time is news even when no script changed.
-        builds, _, _ = htmlsite.update_manifest(self.out, htmlsite.collect(ref_mod.pscread, ref_mod.iter_sources(self.src),
+        builds, _, _, _ = htmlsite.update_manifest(self.out, htmlsite.collect(ref_mod.pscread, ref_mod.iter_sources(self.src),
                                                                      ref_mod.log), "2026-11-22 10:00", "1.2.3.4",
                                           "1.2.3.4", ref_mod.log)
         self.assertIn("the Creation Kit 1.2.3.4", builds[-1]["text"])
@@ -190,12 +190,16 @@ class Html(Base):
         self.assertIn("This is how the site is made.", home)
         self.assertIn("sf-papyrus-ref does not exist to share Bethesda's proprietary intellectual property.", home)
         # The page shows the command as given: the options that change the site, with paths.
-        self.assertIn(f"by running <code>sf-papyrus-ref html --sources {self.src} --out {self.out}</code>", home)
+        import argparse
+        shown = ref_mod.html_command(argparse.Namespace(include_fragments=False, sources=self.src, out=self.out))
+        self.assertIn(f"by running <code>{shown}</code>", home)
         self.assertIn("It recorded the scripts, so that the next build", home)  # a first build compares nothing
         call("html", "--sources", self.src, "--out", self.out, "--include-fragments")
         home = html.unescape(self.page("index.html"))
         self.assertIn("<code>sf-papyrus-ref html --include-fragments --sources", home)
         self.assertIn("It compared the scripts with the last build", home)
+        call("html", "--sources", self.src, "--out", self.out, "--include-fragments")  # nothing changed
+        self.assertIn("It compared the scripts with the last build", html.unescape(self.page("index.html")))
 
     def test_html_command_and_tool_reset(self):
         import argparse
@@ -204,6 +208,8 @@ class Html(Base):
         a = argparse.Namespace(include_fragments=True, sources=r"C:\My Sources", out="site")
         self.assertEqual(ref_mod.html_command(a),
                          'sf-papyrus-ref html --include-fragments --sources "C:\\My Sources" --out site')
+        a = argparse.Namespace(include_fragments=False, sources="C:\\Mods\\Src;old\\", out=ref_mod.default_site())
+        self.assertEqual(ref_mod.html_command(a), 'sf-papyrus-ref html --sources "C:\\Mods\\Src;old"')
         htmlsite = ref_mod.htmlsite
         htmlsite.TOOL.update({"command": "stale"})
         htmlsite.build(ref_mod.pscread, ref_mod.iter_sources(self.src), self.src, self.out, {}, "2026-11-22 01:00",

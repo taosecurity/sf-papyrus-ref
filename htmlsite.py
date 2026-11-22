@@ -252,6 +252,8 @@ def badges(flags):
 
 def frame(title, root, body, menu, stamp):
     nav = "".join(f'<a href="#{esc(i)}">{esc(t)}</a>' for i, t in menu)
+    # Every table scrolls inside its own box on narrow screens. Source text is escaped, so "<table" here is ours.
+    body = body.replace("<table", '<div class="tablewrap"><table').replace("</table>", "</table></div>")
     return f"""<!doctype html>
 <html lang="en" data-root="{root}">
 <head>
@@ -744,7 +746,7 @@ def how_section(scripts, n_members, n_calls, sources, stamp, game, ck, earlier=F
 
 
 def home_page(scripts, children, folders, n_members, n_calls, sources, stamp, game=None, ck=None, builds=(),
-              fragments=False, asked_fragments=False):
+              fragments=False, asked_fragments=False, compared=False):
     roots = sorted((s for s in scripts.values() if not s["extends"] or s["extends"].lower() not in scripts),
                    key=lambda s: -len(children.get(s["name"].lower(), [])))
     top = sorted(scripts.values(), key=lambda s: -len(children.get(s["name"].lower(), [])))[:24]
@@ -783,7 +785,7 @@ def home_page(scripts, children, folders, n_members, n_calls, sources, stamp, ga
                   f'<span class="count">{len(children.get(s["name"].lower(), []))}</span></li>'
                   for s in top) + f"</ul><p>{len(roots)} scripts start a family, because they extend nothing or "
         "extend a script that is not in these sources.</p></section>",
-        how_section(scripts, n_members, n_calls, sources, stamp, game, ck, len(builds) > 1),
+        how_section(scripts, n_members, n_calls, sources, stamp, game, ck, compared),
         '<section id="reading"><h2>This is how to read a script page.</h2><p>Each script page lists its functions, '
         "events and structs with their declarations. Flags such as Latent, Non-delayed, DebugOnly and BetaOnly "
         "come from the official Creation Kit wiki list that ships with sf-papyrus-ref, and Native and Global come "
@@ -895,7 +897,7 @@ def read_manifest(path, log):
 
 def update_manifest(out, scripts, stamp, game, ck, log, fragments=False):
     """Compare this build's scripts with the last build's (kept in a hidden file in the site folder), record a
-    What's new entry when anything changed, and return (the recorded builds, oldest first and at most 10; the game version; the Creation Kit version)."""
+    What's new entry when anything changed, and return (the recorded builds, oldest first and at most 10; the game version; the Creation Kit version; whether an earlier build was compared)."""
     path = os.path.join(out, MANIFEST)
     prev = read_manifest(path, log)
     now = {}
@@ -940,7 +942,7 @@ def update_manifest(out, scripts, stamp, game, ck, log, fragments=False):
         write(path, json.dumps({"format": 1, "builds": builds, "scripts": now}, ensure_ascii=False))
     except OSError as e:
         log.warning("Could not save %s (%s); What's new will not know about this build.", path, e)
-    return builds, game, ck
+    return builds, game, ck, bool(prev and prev["builds"])
 
 
 def write(path, text):
@@ -982,9 +984,9 @@ def build(pscread, sources_iter, sources_label, out, official, stamp, log, asset
     log.info("Game version %s, Creation Kit version %s", game or "unknown", ck or "unknown")
     fragments = any("fragments" in folder_of(s["file"]).lower().split("/") for s in scripts.values())
     # The page shows the same versions What's new records (the last known ones when this build can't read them).
-    builds, game, ck = update_manifest(out, scripts, stamp, game, ck, log, fragments)
+    builds, game, ck, compared = update_manifest(out, scripts, stamp, game, ck, log, fragments)
     write(os.path.join(out, "index.html"), home_page(scripts, children, folders, n_members, n_calls, sources_label,
-                                                     stamp, game, ck, builds, fragments, asked_fragments))
+                                                     stamp, game, ck, builds, fragments, asked_fragments, compared))
     write(os.path.join(out, "az.html"), az_page(scripts, stamp))
     write(os.path.join(out, "tree.html"), tree_page(scripts, children, stamp))
     wanted = {"index.html", "az.html", "tree.html"}

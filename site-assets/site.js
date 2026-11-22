@@ -28,6 +28,18 @@
   document.addEventListener("DOMContentLoaded", function () {
     sizeHeader();
     window.addEventListener("resize", sizeHeader);
+    window.addEventListener("load", function () {
+      sizeHeader();
+      // A link with #target scrolled before the header was measured: scroll to it again.
+      if (window.location.hash) {
+        var el = document.getElementById(decodeURIComponent(window.location.hash.slice(1)));
+        if (el) el.scrollIntoView();
+      }
+    });
+    if (window.ResizeObserver) {
+      var head = document.querySelector("header");
+      if (head) new ResizeObserver(sizeHeader).observe(head);
+    }
     var btn = document.getElementById("theme");
     if (btn) btn.addEventListener("click", function () {
       var next = isDark() ? "light" : "dark";

@@ -580,7 +580,9 @@ def sources_or_error(given):
 def html_command(a):
     """The html command line as the user gave it (the options that change the site), for the site to show."""
     def q(p):
-        return f'"{p}"' if any(c in p for c in ' \t&()^') else p
+        # Quote anything beyond plain path characters; a trailing backslash would escape the closing quote.
+        p = p.rstrip("\\/") or p
+        return p if re.fullmatch(r"[A-Za-z0-9_.:\\/-]+", p) else f'"{p}"'
     parts = ["sf-papyrus-ref html"]
     if a.include_fragments:
         parts.append("--include-fragments")
