@@ -60,6 +60,11 @@ def esc(s):
     return html.escape(str(s), quote=True)
 
 
+def breakable(name):
+    """A script name, escaped, that may wrap after each ":" (long fragment names would overrun a column)."""
+    return esc(name).replace(":", ":<wbr>")
+
+
 def page_name(script):
     """File name of a script's page: namespaces (Name:Space) become dots, anything odd becomes _."""
     return re.sub(r"[^A-Za-z0-9_.-]", "_", script.replace(":", ".")) + ".html"
@@ -327,7 +332,7 @@ def script_page(s, scripts, known, children, callers, official, stamp):
         wiki = f' <a class="wiki" href="{esc(off["wiki"])}" rel="noreferrer">official page</a>' if off and off.get("wiki") else ""
         calls = ""
         if who:
-            items = "".join(f'<li><a href="{page_name(known[c.lower()])}#L{n}">{esc(c)}</a> line {n}</li>'
+            items = "".join(f'<li><a href="{page_name(known[c.lower()])}#L{n}">{breakable(c)}</a> line {n}</li>'
                             for c, n in who[:MAX_CALLERS])
             extra_n = len(who) - MAX_CALLERS
             more = (f"<li>{extra_n} more place{'s call' if extra_n != 1 else ' calls'} it.</li>" if extra_n > 0 else "")
@@ -513,6 +518,9 @@ FRAGMENT_TEXT = {
 
 # The site's own changes, newest first (dates are release dates of sf-papyrus-ref).
 NEWS = [
+    ("2026-11-22", "sf-papyrus-ref 0.2.3 fixed long script names running into each other on the A-Z page: each "
+                   "folder's list now shows names without their folder prefix, and a long name wraps inside its "
+                   "column."),
     ("2026-11-22", "sf-papyrus-ref 0.2.2 added a personal-use warning to every page, links to the tool, and a "
                    "section that explains how this site was made."),
     ("2026-11-21", "sf-papyrus-ref 0.2.1 added this What's new list, the game and Creation Kit versions, an "
@@ -677,7 +685,7 @@ def whats_new(builds, scripts):
             names = [n for n in b.get(key) or [] if isinstance(n, str)]
             if names:
                 # Link only scripts that still have a page; a later build may have removed one.
-                shown = ", ".join(f'<a href="s/{page_name(n)}">{esc(n)}</a>' if n.lower() in scripts else esc(n)
+                shown = ", ".join(f'<a href="s/{page_name(n)}">{breakable(n)}</a>' if n.lower() in scripts else esc(n)
                                   for n in names)
                 what = f"This script {verb.replace('were', 'was')}" if len(names) == 1 else f"These {len(names)} scripts {verb}"
                 extra += (f"<details><summary>{what}.</summary>"
@@ -781,7 +789,7 @@ def home_page(scripts, children, folders, n_members, n_calls, sources, stamp, ga
                   for f, n in sorted(folders.items())) + "</tbody></table></section>",
         '<section id="parents"><h2>These scripts are extended most often.</h2><p>The number is how many scripts '
         'extend each one directly.</p><ul class="cols">'
-        + "".join(f'<li><a href="s/{page_name(s["name"])}">{esc(s["name"])}</a> '
+        + "".join(f'<li><a href="s/{page_name(s["name"])}">{breakable(s["name"])}</a> '
                   f'<span class="count">{len(children.get(s["name"].lower(), []))}</span></li>'
                   for s in top) + f"</ul><p>{len(roots)} scripts start a family, because they extend nothing or "
         "extend a script that is not in these sources.</p></section>",
@@ -814,7 +822,10 @@ def az_page(scripts, stamp):
         where = f"The {esc(f)} folder" if f else "The top folder"
         count = f"{len(names)} script{'s' if len(names) != 1 else ''}"
         body.append(f'<section id="{fid}"><h2>{where} holds {count}.</h2><p>{esc(folder_text(f))}</p><p class="cols">'
-                    + " ".join(f'<a href="s/{page_name(n)}">{esc(n)}</a>' for n in names) + "</p></section>")
+                    # The heading names the folder, so each link shows the name without its namespace (the full
+                    # name is the tooltip); a name longer than its column still wraps inside it.
+                    + " ".join(f'<a href="s/{page_name(n)}" title="{esc(n)}">{breakable(n.rsplit(":", 1)[-1])}</a>'
+                               for n in names) + "</p></section>")
     return frame("All scripts - Papyrus Source", "", "\n".join(body), menu, stamp)
 
 
@@ -838,7 +849,7 @@ def tree_page(scripts, children, stamp):
             '<section id="families"><h2>These scripts start the families.</h2><ul class="tree">'
             + "".join(node(r, 0, frozenset()) for r in big) + "</ul></section>",
             '<section id="alone"><h2>These scripts stand alone, because nothing here extends them and they extend nothing here.</h2><p class="cols">'
-            + " ".join(f'<a href="s/{page_name(r)}">{esc(r)}</a>' if r.lower() in scripts else esc(r) for r in lone)
+            + " ".join(f'<a href="s/{page_name(r)}">{breakable(r)}</a>' if r.lower() in scripts else esc(r) for r in lone)
             + "</p></section>"]
     return frame("Inheritance tree - Papyrus Source", "", "\n".join(body),
                  [("families", "Families"), ("alone", "Stand-alone scripts")], stamp)

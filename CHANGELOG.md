@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.2.3 (2026-11-22)
+
+### Fixes
+
+- **Long script names no longer run into each other.** On the A-Z page, fragment names such as `DLC03:Fragments:TopicInfos:TIF_SFBGS003_DialogueTAHQ_FD000DE9` were wider than their column and overlapped the next one, at any zoom level.
+  - Each folder's list now shows the names without the folder prefix, which the heading already gives. The full name is the link's tooltip.
+  - A name that is still too long wraps inside its own column.
+  - The other column lists (What's new, Most extended, Inherited and "places call this function") wrap the same way.
+
+### Example
+
+    > sf-papyrus-ref html --include-fragments --out PapyrusSource
+    sf-papyrus-ref 0.2.3 by Richard Bejtlich - MIT - https://github.com/taosecurity/sf-papyrus-ref
+    It read 5033 scripts (24731 functions, events and structs) from C:\Program Files (x86)\Steam\steamapps\common\Starfield\Tools\ContentResources.zip.
+    It linked 87540 calls to the function they reach.
+    It wrote 5036 pages to C:\Users\<you>\Documents\PapyrusSource. Open C:\Users\<you>\Documents\PapyrusSource\index.html in your browser.
+    These pages hold Bethesda's script text from your own install: keep them on your PC or home network, and never publish them.
+
+The example ran from the Documents folder; the user name in the path is replaced with `<you>`.
+
 ## 0.2.2 (2026-11-22)
 
 ### What's new

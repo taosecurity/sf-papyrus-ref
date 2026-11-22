@@ -216,6 +216,13 @@ class Html(Base):
                        ref_mod.log, os.path.join(ref_mod.HERE, "site-assets"))
         self.assertEqual(htmlsite.TOOL["command"], "sf-papyrus-ref html")  # a build without tool info resets it
 
+    def test_az_names_fit_their_columns(self):
+        call("html", "--sources", self.src, "--out", self.out, "--include-fragments")
+        az = self.page("az.html")
+        # The folder heading gives the namespace, so the link shows the short name; the tooltip has the full one.
+        self.assertIn('<a href="s/Fragments.Quests.QF_A.html" title="Fragments:Quests:QF_A">QF_A</a>', az)
+        self.assertIn('<a href="s/NS.Deep.html" title="NS:Deep">Deep</a>', az)
+
     def test_damaged_manifest_is_ignored(self):
         os.makedirs(self.out)
         with open(os.path.join(self.out, ".sf-papyrus-ref-site"), "w") as f:

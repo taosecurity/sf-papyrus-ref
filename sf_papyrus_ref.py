@@ -41,7 +41,7 @@ import re
 import sys
 import zipfile
 
-VERSION = "0.2.2"
+VERSION = "0.2.3"
 AUTHOR = "Richard Bejtlich"
 LICENSE = "MIT"
 URL = "https://github.com/taosecurity/sf-papyrus-ref"

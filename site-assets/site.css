@@ -76,7 +76,9 @@ details { margin: 6px 0; }
 summary { cursor: pointer; color: var(--dim); }
 .cols { columns: 18rem auto; column-gap: 24px; margin: 6px 0; }
 ul.cols { padding-left: 18px; }
-p.cols a { display: inline-block; margin-right: 10px; }
+/* A name longer than its column wraps inside it instead of running into the next column. */
+p.cols a { display: inline-block; max-width: 100%; margin-right: 10px; overflow-wrap: anywhere; }
+.cols li { overflow-wrap: anywhere; break-inside: avoid; }
 .tree, .tree ul { list-style: none; padding-left: 18px; margin: 2px 0; }
 .tree summary { color: var(--text); }
 .count { font: 11px var(--mono); color: var(--dim); background: var(--chip); padding: 0 5px; border-radius: 4px; }
