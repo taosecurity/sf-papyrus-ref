@@ -577,6 +577,20 @@ def sources_or_error(given):
     return path, None
 
 
+def html_command(a):
+    """The html command line as the user gave it (the options that change the site), for the site to show."""
+    def q(p):
+        return f'"{p}"' if any(c in p for c in ' \t&()^') else p
+    parts = ["sf-papyrus-ref html"]
+    if a.include_fragments:
+        parts.append("--include-fragments")
+    if a.sources:
+        parts.append("--sources " + q(a.sources))
+    if os.path.abspath(a.out) != os.path.abspath(default_site()):
+        parts.append("--out " + q(a.out))
+    return " ".join(parts)
+
+
 def cmd_html(ref, a):
     path, code = sources_or_error(a.sources)
     if not path:
@@ -593,8 +607,7 @@ def cmd_html(ref, a):
         os.makedirs(out, exist_ok=True)
         counts = htmlsite.build(pscread, iter_sources(path, a.include_fragments), path, out, official, stamp, log,
                                 os.path.join(HERE, "site-assets"), a.include_fragments,
-                                {"version": VERSION,
-                                 "command": "sf-papyrus-ref html" + (" --include-fragments" if a.include_fragments else "")})
+                                {"version": VERSION, "command": html_command(a)})
     except (OSError, zipfile.BadZipFile) as e:
         print(f"Error: could not build the site ({e}). Check that {path} is readable and that you can write to "
               f"{out}, or pass --out <another folder>.", file=sys.stderr)

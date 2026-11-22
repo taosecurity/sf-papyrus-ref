@@ -189,10 +189,26 @@ class Html(Base):
                           f"{version}, a free, open-source tool", page)
         self.assertIn("This is how the site is made.", home)
         self.assertIn("sf-papyrus-ref does not exist to share Bethesda's proprietary intellectual property.", home)
-        self.assertIn("by running <code>sf-papyrus-ref html</code>", home)
-        self.assertNotIn("--include-fragments</code> with", home)
+        # The page shows the command as given: the options that change the site, with paths.
+        self.assertIn(f"by running <code>sf-papyrus-ref html --sources {self.src} --out {self.out}</code>", home)
+        self.assertIn("It recorded the scripts, so that the next build", home)  # a first build compares nothing
         call("html", "--sources", self.src, "--out", self.out, "--include-fragments")
-        self.assertIn("<code>sf-papyrus-ref html --include-fragments</code>", html.unescape(self.page("index.html")))
+        home = html.unescape(self.page("index.html"))
+        self.assertIn("<code>sf-papyrus-ref html --include-fragments --sources", home)
+        self.assertIn("It compared the scripts with the last build", home)
+
+    def test_html_command_and_tool_reset(self):
+        import argparse
+        a = argparse.Namespace(include_fragments=False, sources=None, out=ref_mod.default_site())
+        self.assertEqual(ref_mod.html_command(a), "sf-papyrus-ref html")  # the default folder is not repeated
+        a = argparse.Namespace(include_fragments=True, sources=r"C:\My Sources", out="site")
+        self.assertEqual(ref_mod.html_command(a),
+                         'sf-papyrus-ref html --include-fragments --sources "C:\\My Sources" --out site')
+        htmlsite = ref_mod.htmlsite
+        htmlsite.TOOL.update({"command": "stale"})
+        htmlsite.build(ref_mod.pscread, ref_mod.iter_sources(self.src), self.src, self.out, {}, "2026-11-22 01:00",
+                       ref_mod.log, os.path.join(ref_mod.HERE, "site-assets"))
+        self.assertEqual(htmlsite.TOOL["command"], "sf-papyrus-ref html")  # a build without tool info resets it
 
     def test_damaged_manifest_is_ignored(self):
         os.makedirs(self.out)

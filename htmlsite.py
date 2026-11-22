@@ -44,7 +44,8 @@ NOTE = ("These pages were built from your own Creation Kit's script sources. The
 MANIFEST = ".sf-papyrus-ref-manifest.json"
 REPO = "https://github.com/taosecurity/sf-papyrus-ref"
 # Filled in by build() from the command line tool: version, the command that ran, and its options.
-TOOL = {"version": "", "command": "sf-papyrus-ref html"}
+TOOL_DEFAULTS = {"version": "", "command": "sf-papyrus-ref html"}
+TOOL = dict(TOOL_DEFAULTS)
 WARNING = ("These pages are built from the owner's own Starfield game files and contain Bethesda's proprietary "
            "content. They are for the owner's personal use only. Do not share, publish or distribute them.")
 IP_WARNING = [
@@ -686,7 +687,7 @@ def whats_new(builds, scripts):
     return '<section id="news"><h2>What\'s new</h2><ul class="news">' + lis + "</ul></section>"
 
 
-def how_section(scripts, n_members, n_calls, sources, stamp, game, ck):
+def how_section(scripts, n_members, n_calls, sources, stamp, game, ck, earlier=False):
     """How running sf-papyrus-ref against the Creation Kit's sources made these pages, and what the tool is."""
     ver = f" {esc(TOOL['version'])}" if TOOL["version"] else ""
     versions = ""
@@ -701,8 +702,11 @@ def how_section(scripts, n_members, n_calls, sources, stamp, game, ck):
         f"build linked {n_calls} calls.",
         "It added the official flags and wiki links from the name list that ships with the tool.",
         "It wrote one page per script, the A-Z list, the inheritance tree and the search index.",
-        "It compared the scripts with the last build to fill in What's new.",
     ]
+    if earlier:
+        steps.append("It compared the scripts with the last build to fill in What's new.")
+    else:
+        steps.append("It recorded the scripts, so that the next build can list what changed in What's new.")
     commands = [
         ("lookup", "tells you whether a function or event exists, which script it is on and what its flags are."),
         ("script", "lists every function and event on one script."),
@@ -720,7 +724,7 @@ def how_section(scripts, n_members, n_calls, sources, stamp, game, ck):
         f'<a href="{REPO}" rel="noreferrer">sf-papyrus-ref</a>{ver}. It read {len(scripts)} script source files '
         f"from <code>{esc(sources)}</code>.{versions}</p>"
         + DIAGRAM +
-        "<p>The tool worked through the sources in five steps:</p><ol>"
+        f"<p>The tool worked through the sources in {len(steps)} steps:</p><ol>"
         + "".join(f"<li>{esc(s)}</li>" for s in steps) + "</ol>"
         f"<p>Together, the scripts declare {n_members} functions, events and structs. Nothing was sent anywhere: "
         "the tool runs offline, and the release itself contains no game code.</p>"
@@ -761,8 +765,8 @@ def home_page(scripts, children, folders, n_members, n_calls, sources, stamp, ga
         "reach. Type in the box at the top to find a script, function, event or property, or browse the A-Z list "
         "and the inheritance tree.</p>",
         f'<p class="note">These pages were read from <code>{esc(sources)}</code> and made with '
-        f'<code>{esc(TOOL["command"])}</code>, which anyone can download for free from '
-        f'<a href="{REPO}" rel="noreferrer">GitHub</a> to build this site from their own Creation Kit.</p>',
+        f'<a href="{REPO}" rel="noreferrer">sf-papyrus-ref</a>, a free tool that anyone can download from GitHub '
+        f'to build this site from their own Creation Kit. The command was <code>{esc(TOOL["command"])}</code>.</p>',
         whats_new(builds, scripts),
         '<section id="scripts"><h2>A script is a small program that the game runs.</h2>' + intro + SCRIPT_DIAGRAM
         + "</section>",
@@ -779,7 +783,7 @@ def home_page(scripts, children, folders, n_members, n_calls, sources, stamp, ga
                   f'<span class="count">{len(children.get(s["name"].lower(), []))}</span></li>'
                   for s in top) + f"</ul><p>{len(roots)} scripts start a family, because they extend nothing or "
         "extend a script that is not in these sources.</p></section>",
-        how_section(scripts, n_members, n_calls, sources, stamp, game, ck),
+        how_section(scripts, n_members, n_calls, sources, stamp, game, ck, len(builds) > 1),
         '<section id="reading"><h2>This is how to read a script page.</h2><p>Each script page lists its functions, '
         "events and structs with their declarations. Flags such as Latent, Non-delayed, DebugOnly and BetaOnly "
         "come from the official Creation Kit wiki list that ships with sf-papyrus-ref, and Native and Global come "
@@ -947,7 +951,8 @@ def write(path, text):
 def build(pscread, sources_iter, sources_label, out, official, stamp, log, assets_dir, asked_fragments=False,
           tool=None):
     """Write the whole site into out (which must be empty or a site this command built). Returns counts."""
-    TOOL.update(tool or {})
+    TOOL.clear()
+    TOOL.update(TOOL_DEFAULTS, **(tool or {}))  # every build starts from the defaults
     scripts = collect(pscread, sources_iter, log)
     if not scripts:
         return None

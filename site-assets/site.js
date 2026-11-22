@@ -18,7 +18,16 @@
     return window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
   }
 
+  // The header's height depends on the window width (the warning line wraps), so measure it: the left menu
+  // starts below it and jumps to a section stop just under it.
+  function sizeHeader() {
+    var h = document.querySelector("header");
+    if (h) doc.style.setProperty("--head", h.offsetHeight + "px");
+  }
+
   document.addEventListener("DOMContentLoaded", function () {
+    sizeHeader();
+    window.addEventListener("resize", sizeHeader);
     var btn = document.getElementById("theme");
     if (btn) btn.addEventListener("click", function () {
       var next = isDark() ? "light" : "dark";
