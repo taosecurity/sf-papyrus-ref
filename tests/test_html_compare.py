@@ -134,6 +134,36 @@ class Html(Base):
             f.write(b"MZ" + stray)  # no version resource at all
         self.assertIsNone(htmlsite.exe_version(p))
 
+    def test_review_cases(self):
+        htmlsite = ref_mod.htmlsite
+        src = os.path.join(self.src, "Scripts", "Source")
+        # A doc comment with a ; comment line between it and its property is still found.
+        with open(os.path.join(src, "DefaultSetGlobalOnTriggerEnter.psc"), "w", encoding="utf-8") as f:
+            f.write("Scriptname DefaultSetGlobalOnTriggerEnter extends ObjectReference\n{About}\n\n"
+                    "GlobalVariable Property GlobalToSet Auto Const\n; note\n{The global}\n")
+        # A Shattered Space fragment named the way fragments are (QF_SFBGS001_...).
+        os.makedirs(os.path.join(src, "Fragments", "Quests"), exist_ok=True)
+        with open(os.path.join(src, "Fragments", "Quests", "QF_SFBGS001_X.psc"), "w", encoding="utf-8") as f:
+            f.write("Scriptname Fragments:Quests:QF_SFBGS001_X extends Quest\n")
+        code, _, err = call("html", "--sources", self.src, "--out", self.out, "--include-fragments")
+        self.assertEqual(code, 0, err)
+        home = html.unescape(self.page("index.html"))
+        self.assertIn('href="s/DefaultSetGlobalOnTriggerEnter.html#L6"', home)  # the doc comment after "; note"
+        self.assertNotIn("don't include Shattered Space", home)
+        self.assertIn("don't include the Terran Armada Creation", home)
+        # --include-fragments on sources without fragments: no advice to pass the flag again.
+        os.remove(os.path.join(src, "Fragments", "Quests", "QF_SFBGS001_X.psc"))
+        os.remove(os.path.join(src, "Fragments", "Quests", "QF_A.psc"))
+        call("html", "--sources", self.src, "--out", self.out, "--include-fragments")
+        home = html.unescape(self.page("index.html"))
+        self.assertIn("These sources hold no fragment scripts", home)
+        self.assertNotIn("Run sf-papyrus-ref html with --include-fragments", home)
+        # A version read for the first time is news even when no script changed.
+        builds = htmlsite.update_manifest(self.out, htmlsite.collect(ref_mod.pscread, ref_mod.iter_sources(self.src),
+                                                                     ref_mod.log), "2026-11-22 10:00", "1.2.3.4",
+                                          "1.2.3.4", ref_mod.log)
+        self.assertIn("the Creation Kit 1.2.3.4", builds[-1]["text"])
+
     def test_damaged_manifest_is_ignored(self):
         os.makedirs(self.out)
         with open(os.path.join(self.out, ".sf-papyrus-ref-site"), "w") as f:

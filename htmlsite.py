@@ -414,6 +414,9 @@ SCRIPT_INTRO = [
     "until they finish, as with {Utility}.Wait. The game keeps each running script's variables and state in your "
     "save, so a script picks up where it left off when you load a game.",
 ]
+NO_FRAGMENTS_IN_SOURCES = ("The Creation Kit also writes small scripts called fragments, one for each quest stage, "
+                           "scene, dialogue line, terminal menu, AI package or perk entry that runs a few lines of "
+                           "script. These sources hold no fragment scripts, so none are on this site.")
 NO_FRAGMENTS = ("The Creation Kit also writes small scripts called fragments, one for each quest stage, scene, "
                 "dialogue line, terminal menu, AI package or perk entry that runs a few lines of script. This build "
                 "leaves the fragments out. Run sf-papyrus-ref html with --include-fragments to add them.")
@@ -576,8 +579,10 @@ def content_section(scripts, game, ck):
         label = labels.get(owner, owner[0].upper() + owner[1:])
         items.append(f"<li>{esc(label)} has {n} script{'s' if n != 1 else ''} here.</li>")
     missing = []
-    def has(prefix):  # a script name, or any part of a namespaced name, that starts with the prefix
-        return any(part.startswith(prefix) for k in scripts for part in k.split(":"))
+    def has(marker):  # the marker at the start of a name or namespace part, or after an underscore (QF_SFBGS001_...)
+        pat = re.compile(rf"(?:^|[:_]){marker}")
+        return any(pat.search(k) or pat.search(folder_of(s["file"]).lower().replace("/", ":"))
+                   for k, s in scripts.items())
     if not has("sfbgs001"):
         missing.append("Shattered Space")
     if not has("sfter"):
@@ -602,8 +607,16 @@ def walkthrough_section(scripts, known):
     for pattern, text in WALK_STEPS:
         if pattern == DOC_NEXT:
             # A documentation comment belongs to the line just before it: look only at the next non-blank line.
-            nxt = next((i for i in range(last + 1, len(lines)) if lines[i].strip()), None) if last is not None else None
+            start = last + 1 if last is not None else pos
+            nxt = next((i for i in range(start, len(lines))
+                        if lines[i].strip() and not lines[i].lstrip().startswith(";")), None)
+            if nxt is not None and last is None:
+                # No anchor line: take the first doc comment before the next declaration.
+                nxt = next((i for i in range(start, len(lines)) if re.search(r"^\s*\{", lines[i])
+                            or re.search(r"(?i)\b(property|event|function)\b", lines[i])), None)
             hit = nxt if nxt is not None and re.search(r"^\s*\{", lines[nxt]) else None
+            if hit is not None:
+                pos = max(pos, hit)
         else:
             hit = next((i for i in range(pos, len(lines)) if re.search(pattern, lines[i])), None)
             last = hit
@@ -628,8 +641,8 @@ def walkthrough_section(scripts, known):
 def whats_new(builds, scripts):
     """The site's news and the recorded builds, newest first. Items sort by full date and time; a NEWS item
     (date only) sorts after the builds of its day, and a later NEWS item before an earlier one."""
-    items = [(f"{d} 00:{len(NEWS) - i:02d}", d, esc(t), "") for i, (d, t) in enumerate(NEWS)]
-    for b in builds:
+    items = [((d, 0, "", len(NEWS) - i), d, esc(t), "") for i, (d, t) in enumerate(NEWS)]
+    for order, b in enumerate(builds):  # builds are oldest first, so a later one wins a tie
         extra = ""
         for key, verb in (("added", "were added"), ("changed", "changed"), ("removed", "were removed")):
             names = [n for n in b.get(key) or [] if isinstance(n, str)]
@@ -641,13 +654,14 @@ def whats_new(builds, scripts):
                 extra += (f"<details><summary>{what}.</summary>"
                           f'<p class="cols">{shown}.</p></details>')
         built = str(b.get("built", ""))
-        items.append((built, built[:10], esc(b.get("text", "")), extra))
+        items.append(((built[:10], 1, built[10:], order), built[:10], esc(b.get("text", "")), extra))
     items.sort(key=lambda x: x[0], reverse=True)
     lis = "".join(f'<li><b>{esc(d)}:</b> {t}{extra}</li>' for _, d, t, extra in items[:8])
     return '<section id="news"><h2>What\'s new</h2><ul class="news">' + lis + "</ul></section>"
 
 
-def home_page(scripts, children, folders, n_members, n_calls, sources, stamp, game=None, ck=None, builds=()):
+def home_page(scripts, children, folders, n_members, n_calls, sources, stamp, game=None, ck=None, builds=(),
+              fragments=False, asked_fragments=False):
     roots = sorted((s for s in scripts.values() if not s["extends"] or s["extends"].lower() not in scripts),
                    key=lambda s: -len(children.get(s["name"].lower(), [])))
     top = sorted(scripts.values(), key=lambda s: -len(children.get(s["name"].lower(), [])))[:24]
@@ -655,8 +669,8 @@ def home_page(scripts, children, folders, n_members, n_calls, sources, stamp, ga
 
     def link(word):
         return f'<a href="s/{page_name(known[word.lower()])}">{word}</a>' if word.lower() in known else word
-    has_fragments = any("fragments" in folder_of(s["file"]).lower().split("/") for s in scripts.values())
-    paras = [p if has_fragments or not p.startswith("Many scripts on this site are fragments") else NO_FRAGMENTS
+    frag_text = NO_FRAGMENTS_IN_SOURCES if asked_fragments else NO_FRAGMENTS
+    paras = [p if fragments or not p.startswith("Many scripts on this site are fragments") else frag_text
              for p in SCRIPT_INTRO]
     intro = "".join("<p>" + re.sub(r"\{(\w+)\}", lambda m: link(m.group(1)), esc(p)) + "</p>" for p in paras)
     versions = (f" They come from the Creation Kit {esc(ck)}" if ck else " They come from your Creation Kit")
@@ -782,7 +796,8 @@ def read_manifest(path, log):
     def good_build(b):
         return (isinstance(b, dict) and isinstance(b.get("text"), str) and isinstance(b.get("built"), str)
                 and all(isinstance(b.get(k), (str, type(None))) for k in ("game", "ck"))
-                and all(isinstance(b.get(k, []), list) for k in ("added", "removed", "changed")))
+                and all(isinstance(b.get(k, []), list) for k in ("added", "removed", "changed"))
+                and isinstance(b.get("fragments", False), bool))
     ok = (isinstance(doc, dict) and isinstance(doc.get("scripts"), dict) and isinstance(doc.get("builds"), list)
           and all(isinstance(v, list) and len(v) == 2 and all(isinstance(x, str) for x in v)
                   for v in doc["scripts"].values())
@@ -793,17 +808,15 @@ def read_manifest(path, log):
     return doc
 
 
-def update_manifest(out, scripts, stamp, game, ck, log):
+def update_manifest(out, scripts, stamp, game, ck, log, fragments=False):
     """Compare this build's scripts with the last build's (kept in a hidden file in the site folder), record a
     What's new entry when anything changed, and return the recorded builds, oldest first (at most 10)."""
     path = os.path.join(out, MANIFEST)
-    prev = None
     prev = read_manifest(path, log)
     now = {}
     for key, s in scripts.items():
         text = "\n".join(x.rstrip() for x in s["text"].replace("\r\n", "\n").replace("\r", "\n").split("\n")).strip()
         now[key] = [s["name"], hashlib.sha1(text.encode("utf-8")).hexdigest()]
-    fragments = any("fragments" in folder_of(s["file"]).lower().split("/") for s in scripts.values())
     builds = prev["builds"] if prev else []
     ckt = f"the Creation Kit {ck}" if ck else "your Creation Kit"
     if not prev:
@@ -816,7 +829,9 @@ def update_manifest(out, scripts, stamp, game, ck, log):
         changed = sorted(now[k][0] for k in now.keys() & old.keys() if now[k][1] != old[k][1])
         last = builds[-1] if builds else {}
         # A version counts as changed only when both builds could read it (a copied zip has no .exe next to it).
-        versions = any(new and last.get(k) and new != last.get(k) for k, new in (("game", game), ("ck", ck)))
+        versions = any(new and new != last.get(k) for k, new in (("game", game), ("ck", ck)))
+        game, ck = game or last.get("game"), ck or last.get("ck")  # keep a known version when this build can't read it
+        ckt = f"the Creation Kit {ck}" if ck else "your Creation Kit"
         entry = None
         if added or removed or changed or versions:
             was = f", which replaced the Creation Kit {last.get('ck')}" if ck and last.get("ck") and last.get("ck") != ck else ""
@@ -824,7 +839,7 @@ def update_manifest(out, scripts, stamp, game, ck, log):
             if "fragments" in last and last["fragments"] != fragments:
                 why = (" This build includes the fragment scripts, which the last one left out."
                        if fragments else " This build leaves out the fragment scripts, which the last one included.")
-            entry = {"built": stamp, "game": game or last.get("game"), "ck": ck or last.get("ck"),
+            entry = {"built": stamp, "game": game, "ck": ck,
                      "fragments": fragments,
                      "text": f"The site was rebuilt from the sources in {ckt}{was}.{why} Since the build of "
                              f"{str(last.get('built', 'before'))[:10]}, {count(added, 'was added', 'were added')}, "
@@ -846,7 +861,7 @@ def write(path, text):
         f.write(text)
 
 
-def build(pscread, sources_iter, sources_label, out, official, stamp, log, assets_dir):
+def build(pscread, sources_iter, sources_label, out, official, stamp, log, assets_dir, asked_fragments=False):
     """Write the whole site into out (which must be empty or a site this command built). Returns counts."""
     scripts = collect(pscread, sources_iter, log)
     if not scripts:
@@ -875,9 +890,10 @@ def build(pscread, sources_iter, sources_label, out, official, stamp, log, asset
     n_calls = sum(len(v) for v in callers.values())
     game, ck = find_versions(sources_label)
     log.info("Game version %s, Creation Kit version %s", game or "unknown", ck or "unknown")
-    builds = update_manifest(out, scripts, stamp, game, ck, log)
+    fragments = any("fragments" in folder_of(s["file"]).lower().split("/") for s in scripts.values())
+    builds = update_manifest(out, scripts, stamp, game, ck, log, fragments)
     write(os.path.join(out, "index.html"), home_page(scripts, children, folders, n_members, n_calls, sources_label,
-                                                     stamp, game, ck, builds))
+                                                     stamp, game, ck, builds, fragments, asked_fragments))
     write(os.path.join(out, "az.html"), az_page(scripts, stamp))
     write(os.path.join(out, "tree.html"), tree_page(scripts, children, stamp))
     wanted = {"index.html", "az.html", "tree.html"}

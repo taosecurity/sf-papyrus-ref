@@ -592,7 +592,7 @@ def cmd_html(ref, a):
     try:
         os.makedirs(out, exist_ok=True)
         counts = htmlsite.build(pscread, iter_sources(path, a.include_fragments), path, out, official, stamp, log,
-                                os.path.join(HERE, "site-assets"))
+                                os.path.join(HERE, "site-assets"), a.include_fragments)
     except (OSError, zipfile.BadZipFile) as e:
         print(f"Error: could not build the site ({e}). Check that {path} is readable and that you can write to "
               f"{out}, or pass --out <another folder>.", file=sys.stderr)
