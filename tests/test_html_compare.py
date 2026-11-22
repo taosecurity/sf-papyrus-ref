@@ -220,8 +220,25 @@ class Html(Base):
         call("html", "--sources", self.src, "--out", self.out, "--include-fragments")
         az = self.page("az.html")
         # The folder heading gives the namespace, so the link shows the short name; the tooltip has the full one.
-        self.assertIn('<a href="s/Fragments.Quests.QF_A.html" title="Fragments:Quests:QF_A">QF_A</a>', az)
-        self.assertIn('<a href="s/NS.Deep.html" title="NS:Deep">Deep</a>', az)
+        self.assertIn('<a href="s/Fragments.Quests.QF_A.html" title="Fragments:Quests:QF_A">'
+                      '<span class="ns">Fragments:Quests:</span>QF_A</a>', az)
+        self.assertIn('<a href="s/NS.Deep.html" title="NS:Deep"><span class="ns">NS:</span>Deep</a>', az)
+
+    def test_az_keeps_names_whose_namespace_is_not_the_folder(self):
+        with open(os.path.join(self.src, "Scripts", "Source", "MyQuest.psc"), "w", encoding="utf-8") as f:
+            f.write("Scriptname MyMod:Zeta extends Quest\n")
+        with open(os.path.join(self.src, "Scripts", "Source", "Alpha.psc"), "w", encoding="utf-8") as f:
+            f.write("Scriptname Alpha extends Quest\n")
+        call("html", "--sources", self.src, "--out", self.out)
+        az = self.page("az.html")
+        self.assertIn('title="MyMod:Zeta">MyMod:<wbr>Zeta</a>', az)  # not cut: the top folder is not MyMod
+        self.assertLess(az.index(">Alpha</a>"), az.index(">Child</a>"))  # sorted by the shown name
+
+    def test_long_unlinked_names_can_wrap(self):
+        call("html", "--sources", self.src, "--out", self.out)
+        os.remove(os.path.join(self.src, "Scripts", "Source", "NS", "Deep.psc"))
+        call("html", "--sources", self.src, "--out", self.out)
+        self.assertIn("NS:<wbr>Deep.</p>", self.page("index.html"))  # a removed script, shown as plain text
 
     def test_damaged_manifest_is_ignored(self):
         os.makedirs(self.out)

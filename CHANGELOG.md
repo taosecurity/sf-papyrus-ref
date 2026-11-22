@@ -5,9 +5,10 @@
 ### Fixes
 
 - **Long script names no longer run into each other.** On the A-Z page, fragment names such as `DLC03:Fragments:TopicInfos:TIF_SFBGS003_DialogueTAHQ_FD000DE9` were wider than their column and overlapped the next one, at any zoom level.
-  - Each folder's list now shows the names without the folder prefix, which the heading already gives. The full name is the link's tooltip.
+  - When a script's namespace is exactly its folder (for example `DLC03:Fragments:Quests:` in `DLC03/Fragments/Quests`), the list shows only the last part of its name, because the heading already gives the folder. The namespace stays in the page, visually hidden, so Ctrl+F and screen readers still find the full name, and the full name is also the link's tooltip. Any other name is shown in full.
+  - Each folder's list is sorted A to Z by the name you see.
   - A name that is still too long wraps inside its own column.
-  - The other column lists (What's new, Most extended, Inherited and "places call this function") wrap the same way.
+  - The other column lists wrap the same way, including names shown as plain text: What's new, Most extended, Inherited, the stand-alone scripts and "places call this function".
 
 ### Example
 

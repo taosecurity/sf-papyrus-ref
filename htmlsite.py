@@ -685,7 +685,7 @@ def whats_new(builds, scripts):
             names = [n for n in b.get(key) or [] if isinstance(n, str)]
             if names:
                 # Link only scripts that still have a page; a later build may have removed one.
-                shown = ", ".join(f'<a href="s/{page_name(n)}">{breakable(n)}</a>' if n.lower() in scripts else esc(n)
+                shown = ", ".join(f'<a href="s/{page_name(n)}">{breakable(n)}</a>' if n.lower() in scripts else breakable(n)
                                   for n in names)
                 what = f"This script {verb.replace('were', 'was')}" if len(names) == 1 else f"These {len(names)} scripts {verb}"
                 extra += (f"<details><summary>{what}.</summary>"
@@ -818,14 +818,23 @@ def az_page(scripts, stamp):
     for f in sorted(by_folder):
         fid = "f-" + re.sub(r"[^A-Za-z0-9_-]", "_", f or "top")
         menu.append((fid, f or "(top level)"))
-        names = sorted(by_folder[f], key=str.lower)
         where = f"The {esc(f)} folder" if f else "The top folder"
-        count = f"{len(names)} script{'s' if len(names) != 1 else ''}"
+        count = f"{len(by_folder[f])} script{'s' if len(by_folder[f]) != 1 else ''}"
+        # The heading names the folder. A name whose namespace is exactly that folder (DLC03/Fragments/Quests holds
+        # DLC03:Fragments:Quests:QF_...) shows only its last part; the namespace stays in the text, visually
+        # hidden, so Ctrl+F and screen readers still find the full name. Any other name is shown in full.
+        ns = f.replace("/", ":").lower()
+        shown = []
+        for n in by_folder[f]:
+            head, _, tail = n.rpartition(":")
+            if head and head.lower() == ns:
+                shown.append((tail, f'<span class="ns">{esc(head)}:</span>{breakable(tail)}', n))
+            else:
+                shown.append((n, breakable(n), n))
+        shown.sort(key=lambda x: x[0].lower())  # A to Z by the name the reader sees
         body.append(f'<section id="{fid}"><h2>{where} holds {count}.</h2><p>{esc(folder_text(f))}</p><p class="cols">'
-                    # The heading names the folder, so each link shows the name without its namespace (the full
-                    # name is the tooltip); a name longer than its column still wraps inside it.
-                    + " ".join(f'<a href="s/{page_name(n)}" title="{esc(n)}">{breakable(n.rsplit(":", 1)[-1])}</a>'
-                               for n in names) + "</p></section>")
+                    + " ".join(f'<a href="s/{page_name(n)}" title="{esc(n)}">{text}</a>' for _, text, n in shown)
+                    + "</p></section>")
     return frame("All scripts - Papyrus Source", "", "\n".join(body), menu, stamp)
 
 
@@ -849,7 +858,7 @@ def tree_page(scripts, children, stamp):
             '<section id="families"><h2>These scripts start the families.</h2><ul class="tree">'
             + "".join(node(r, 0, frozenset()) for r in big) + "</ul></section>",
             '<section id="alone"><h2>These scripts stand alone, because nothing here extends them and they extend nothing here.</h2><p class="cols">'
-            + " ".join(f'<a href="s/{page_name(r)}">{breakable(r)}</a>' if r.lower() in scripts else esc(r) for r in lone)
+            + " ".join(f'<a href="s/{page_name(r)}">{breakable(r)}</a>' if r.lower() in scripts else breakable(r) for r in lone)
             + "</p></section>"]
     return frame("Inheritance tree - Papyrus Source", "", "\n".join(body),
                  [("families", "Families"), ("alone", "Stand-alone scripts")], stamp)

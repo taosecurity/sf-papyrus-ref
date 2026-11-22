@@ -74,7 +74,9 @@ tr:target { background: var(--hl); }
 .wiki { margin-left: 8px; font-size: 13px; }
 details { margin: 6px 0; }
 summary { cursor: pointer; color: var(--dim); }
-.cols { columns: 18rem auto; column-gap: 24px; margin: 6px 0; }
+.cols { columns: 18rem auto; column-gap: 24px; margin: 6px 0; overflow-wrap: anywhere; }
+/* Visually hidden, but still found by Ctrl+F and read by screen readers (the namespace on the A-Z page). */
+.ns { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 ul.cols { padding-left: 18px; }
 /* A name longer than its column wraps inside it instead of running into the next column. */
 p.cols a { display: inline-block; max-width: 100%; margin-right: 10px; overflow-wrap: anywhere; }
