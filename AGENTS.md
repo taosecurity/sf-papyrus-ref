@@ -1,6 +1,6 @@
 # AGENTS.md: sf-papyrus-ref for AI assistants
 
-These are plain steps for an AI assistant helping someone use sf-papyrus-ref. Every command here was run once on sf-papyrus-ref 0.2.0 before release. The [README](README.md) has the full description.
+These are plain steps for an AI assistant helping someone use sf-papyrus-ref. Every command here was run once on sf-papyrus-ref 0.2.1 before release. The [README](README.md) has the full description.
 
 ## 1. What it is for
 
@@ -18,11 +18,11 @@ sf-papyrus-ref is an offline reference for Starfield's Papyrus scripting languag
 
 ## 3. Install
 
-Download `sf-papyrus-ref-0.2.0.zip` and `sf-papyrus-ref-0.2.0.zip.sha256` from https://github.com/taosecurity/sf-papyrus-ref/releases, then check the zip:
+Download `sf-papyrus-ref-0.2.1.zip` and `sf-papyrus-ref-0.2.1.zip.sha256` from https://github.com/taosecurity/sf-papyrus-ref/releases, then check the zip:
 
-    certutil -hashfile sf-papyrus-ref-0.2.0.zip SHA256
+    certutil -hashfile sf-papyrus-ref-0.2.1.zip SHA256
 
-On Linux, run `sha256sum -c sf-papyrus-ref-0.2.0.zip.sha256` instead. Unzip it anywhere and keep its files together; `sf_papyrus_ref.py` loads `pexread.py`, `pscread.py`, `htmlsite.py`, `data/` and `site-assets/` from its own folder.
+On Linux, run `sha256sum -c sf-papyrus-ref-0.2.1.zip.sha256` instead. Unzip it anywhere and keep its files together; `sf_papyrus_ref.py` loads `pexread.py`, `pscread.py`, `htmlsite.py`, `data/` and `site-assets/` from its own folder.
 
 ## 4. Prove the install works
 

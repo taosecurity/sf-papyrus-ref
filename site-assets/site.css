@@ -83,6 +83,10 @@ pre.src .ln a { color: inherit; }
 pre.src .ln:target { background: var(--hl); color: var(--text); }
 .k { color: var(--k); } .s { color: var(--s); } .c { color: var(--c); font-style: italic; } .d { color: var(--d); }
 .n { color: var(--n); } a.t { color: var(--t); }
+pre.src.one { margin: 0; padding: 2px 8px; border: 0; background: transparent; white-space: pre-wrap; }
+table.walk td:nth-child(2) { width: 40%; }
+ul.news { padding-left: 20px; }
+ul.news li { margin: 4px 0; }
 .diagram { margin: 10px 0; }
 .diagram svg { width: 100%; height: auto; max-height: 200px; }
 .diagram .box rect { fill: var(--panel); stroke: var(--accent); stroke-width: 2; }

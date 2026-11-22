@@ -41,7 +41,7 @@ import re
 import sys
 import zipfile
 
-VERSION = "0.2.0"
+VERSION = "0.2.1"
 AUTHOR = "Richard Bejtlich"
 LICENSE = "MIT"
 URL = "https://github.com/taosecurity/sf-papyrus-ref"
@@ -423,8 +423,8 @@ def cmd_data(ref, a):
         return 0
     c = d.get("counts", {})
     print(f"Data file: {ref.path}")
-    print(f"Official wiki revision {d.get('wiki_revision')}, list built {d.get('built')}.")
-    print(f"{c.get('scripts')} scripts, {c.get('functions')} functions, {c.get('events')} events, "
+    print(f"The list comes from official wiki revision {d.get('wiki_revision')} and was built on {d.get('built')}.")
+    print(f"It holds {c.get('scripts')} scripts, {c.get('functions')} functions, {c.get('events')} events and "
           f"{c.get('structs', 0)} structs.")
     print("Flags: " + ", ".join(f"{FLAGS[f]} {c.get(f)}" for f in FLAGS))
     print(d.get("source", ""))
@@ -469,9 +469,9 @@ def cmd_build_local(ref, a):
         out_json({**meta(ref), "cache": a.cache, "sources": doc["sources"], "scripts": len(doc["scripts"]),
                   "members": n_members, "official_scripts_found": official})
     else:
-        print(f"Read {len(doc['scripts'])} scripts ({n_members} functions, events and structs) from {path}.")
+        print(f"It read {len(doc['scripts'])} scripts ({n_members} functions, events and structs) from {path}.")
         print(f"{official} of the {len(ref.scripts)} scripts on the official list are among them.")
-        print(f"Saved the local cache to {a.cache} (it stays on this machine; never share it).")
+        print(f"It saved the local cache to {a.cache}. The cache stays on this machine, so never share it.")
     return 0
 
 
@@ -512,7 +512,8 @@ def cmd_diff(ref, a):
                   "only_on_wiki": only_wiki, "only_in_sources": only_src, "flag_differences": flag_diffs,
                   "flag_counts": counts})
         return 0
-    print(f"Official list (wiki revision {ref.doc.get('wiki_revision')}) against your sources ({local.doc.get('sources')}).")
+    print(f"This compares the official list (wiki revision {ref.doc.get('wiki_revision')}) with your sources in "
+          f"{local.doc.get('sources')}.")
     print(f"Scripts on the official list but not in your sources: {len(missing_scripts)}"
           + (": " + ", ".join(missing_scripts) if missing_scripts else ""))
     for title, items in (("Names on the wiki but not in your sources", only_wiki),
@@ -604,9 +605,9 @@ def cmd_html(ref, a):
     if a.json:
         out_json({**meta(ref), "sources": os.path.abspath(path), "out": out, "index": index, **counts})
     else:
-        print(f"Read {counts['scripts']} scripts ({counts['members']} functions, events and structs) from {path}.")
-        print(f"Linked {counts['calls']} calls to the function they reach.")
-        print(f"Wrote {counts['pages']} pages to {out}. Open {index} in your browser.")
+        print(f"It read {counts['scripts']} scripts ({counts['members']} functions, events and structs) from {path}.")
+        print(f"It linked {counts['calls']} calls to the function they reach.")
+        print(f"It wrote {counts['pages']} pages to {out}. Open {index} in your browser.")
         print("These pages hold Bethesda's script text from your own install: keep them on your PC or home network, "
               "and never publish them.")
     return 0
@@ -704,9 +705,12 @@ def cmd_compare(ref, a):
         for e in errors:
             print(f"Error: {e}", file=sys.stderr)
         if results:
-            print(f"Compared {len(results)} scripts with {path}: {counts['identical']} identical, "
-                  f"{counts['changed']} changed, {counts['not-in-ck']} not from the Creation Kit"
-                  + (f"; {len(errors)} paths could not be read" if errors else "") + ".")
+            def are(n):
+                return f"{n} is" if n == 1 else f"{n} are"
+            print(f"It compared {len(results)} script{'s' if len(results) != 1 else ''} with {path}: "
+                  f"{are(counts['identical'])} identical, {are(counts['changed'])} changed and "
+                  f"{are(counts['not-in-ck'])} not from the Creation Kit."
+                  + (f" {len(errors)} paths could not be read." if errors else ""))
     if errors or not results:
         if not results and not errors:
             print("Error: no .psc files in the given paths.", file=sys.stderr)
@@ -932,8 +936,11 @@ def cmd_check(ref, a):
         for e in errors:
             print(f"Error: {e}", file=sys.stderr)
         errs = sum(x["severity"] == "error" for x in findings)
-        print(f"Checked {n} files: {errs} errors, {len(findings) - errs} warnings"
-              + (f", {len(errors)} files could not be read" if errors else "") + ".")
+        def many(k, word):
+            return f"{k} {word}" + ("" if k == 1 else "s")
+        print(f"It checked {many(n, 'file')} and found {many(errs, 'error')} and "
+              f"{many(len(findings) - errs, 'warning')}."
+              + (f" {many(len(errors), 'file')} could not be read." if errors else ""))
         if not a.local.doc:
             print("Tip: run 'sf-papyrus-ref build-local' once so calls on inherited functions are matched exactly.")
     if errors:

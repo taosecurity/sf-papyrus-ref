@@ -13,11 +13,13 @@ robots "noindex" tag and a note that says so.
 The site needs no server and no internet: plain HTML, one stylesheet and two scripts, with no inline scripts
 (it works under a strict Content-Security-Policy such as script-src 'self'). Standard library only.
 """
+import hashlib
 import html
 import json
 import os
 import re
 import shutil
+import struct
 
 IDENT = r"[A-Za-z_][A-Za-z0-9_]*"
 KEYWORDS = {"as", "auto", "autoreadonly", "betaonly", "bool", "collapsed", "collapsedonbase", "collapsedonref",
@@ -37,8 +39,9 @@ CUSTOMEVENT_RE = re.compile(rf"(?i)^\s*customevent\s+(?P<name>{IDENT})\s*$")
 FLAG_LABELS = {"latent": "Latent", "nondelayed": "Non-delayed", "debugonly": "DebugOnly", "betaonly": "BetaOnly",
                "invsafe": "Inventory-safe", "native": "Native", "global": "Global"}
 MAX_CALLERS = 300  # per function, on its page (the count is always exact)
-NOTE = ("Built from your own Creation Kit script sources. These pages hold Bethesda's script text: keep them on "
-        "your PC or your home network, and never publish or share them.")
+NOTE = ("These pages were built from your own Creation Kit's script sources. They hold Bethesda's script text, so "
+        "keep them on your PC or your home network, and never publish or share them.")
+MANIFEST = ".sf-papyrus-ref-manifest.json"
 
 
 def esc(s):
@@ -257,7 +260,7 @@ def frame(title, root, body, menu, stamp):
 <aside class="menu"><a href="#top" class="on">Top</a>{nav}</aside>
 <main>
 {body}
-<footer><p>{esc(NOTE)}</p><p>Built {esc(stamp)} by sf-papyrus-ref (MIT, https://github.com/taosecurity/sf-papyrus-ref).</p></footer>
+<footer><p>{esc(NOTE)}</p><p>This site was built on {esc(stamp)} by sf-papyrus-ref (MIT, https://github.com/taosecurity/sf-papyrus-ref).</p></footer>
 </main>
 </body>
 </html>
@@ -270,24 +273,30 @@ def script_page(s, scripts, known, children, callers, official, stamp):
     key = s["name"].lower()
     parents = chain(scripts, s["name"])[1:]
     ext = s["extends"]
-    head = [f'<h1>{esc(s["name"])}</h1>']
-    line = f'<p class="sub">{badges(s["flags"])} '
-    if ext:
-        line += f'Extends {link_types(ext, known, p)}. '
-    line += f'File <code>{esc(s["file"])}</code>.</p>'
-    head.append(line)
+    name = esc(s["name"])
+    head = [f'<h1>{name}</h1>']
+    line = '<p class="sub">'
+    line += f'{name} extends {link_types(ext, known, p)}. ' if ext else f'{name} extends no other script. '
+    line += f'Its source file is <code>{esc(s["file"])}</code>.'
+    if s["flags"]:
+        words = [FLAG_LABELS.get(f, f.capitalize()) for f in s["flags"]]
+        listed = words[0] if len(words) == 1 else ", ".join(words[:-1]) + " and " + words[-1]
+        line += f' Its script flag{"s are" if len(words) != 1 else " is"} {esc(listed)}.'
+    head.append(line + "</p>")
     if parents or ext:
         names = [s["name"]] + [x["name"] for x in parents]
         last = (parents[-1] if parents else s)["extends"]
         if last and last.lower() not in scripts:
             names.append(last)  # the first ancestor that is not in these sources, shown unlinked
-        head.append('<p class="chain">' + " &rarr; ".join(link_types(n, known, p) if i else f"<b>{esc(n)}</b>"
-                                                         for i, n in enumerate(names)) + "</p>")
+        head.append('<p class="chain">Its parent chain runs '
+                    + " &rarr; ".join(link_types(n, known, p) if i else f"<b>{esc(n)}</b>"
+                                      for i, n in enumerate(names)) + ".</p>")
     kids = sorted(children.get(key, []), key=str.lower)
     if kids:
-        head.append(f'<p class="kids">{len(kids)} script{"s" if len(kids) != 1 else ""} extend this one: '
+        verb = "scripts extend" if len(kids) != 1 else "script extends"
+        head.append(f'<p class="kids">{len(kids)} {verb} {name}: '
                     + ", ".join(link_types(k, known, p) for k in kids[:60])
-                    + (f" and {len(kids) - 60} more (see the Tree page)" if len(kids) > 60 else "") + ".</p>")
+                    + (f", and {len(kids) - 60} more are on the Tree page" if len(kids) > 60 else "") + ".</p>")
     body = ["\n".join(head)]
     menu = []
 
@@ -305,41 +314,45 @@ def script_page(s, scripts, known, children, callers, official, stamp):
         if who:
             items = "".join(f'<li><a href="{page_name(known[c.lower()])}#L{n}">{esc(c)}</a> line {n}</li>'
                             for c, n in who[:MAX_CALLERS])
-            more = f"<li>and {len(who) - MAX_CALLERS} more</li>" if len(who) > MAX_CALLERS else ""
-            calls = (f'<details><summary>Called from {len(who)} place{"s" if len(who) != 1 else ""}</summary>'
+            more = (f"<li>{len(who) - MAX_CALLERS} more places call it.</li>" if len(who) > MAX_CALLERS else "")
+            places = f"{len(who)} places call" if len(who) != 1 else "1 place calls"
+            calls = (f'<details><summary>{places} this {esc(m["kind"])}.</summary>'
                      f'<ul class="cols">{items}{more}</ul></details>')
         rows.append(f'<tr id="m-{esc(m["name"].lower())}"><td class="kind">{esc(m["kind"])}</td>'
                     f'<td><code>{link_types(m["sig"], known, p)}</code>{badges(flags)}{wiki}{calls}</td>'
                     f'<td class="where">{where}</td></tr>')
     if rows:
         menu.append(("members", "Functions and events"))
-        body.append(f'<section id="members"><h2>Functions, events and structs ({len(rows)})</h2>'
+        what = (f"these {len(rows)} functions, events and structs" if len(rows) != 1
+                else "this one function, event or struct")
+        body.append(f'<section id="members"><h2>{name} declares {what}.</h2>'
                     '<table><thead><tr><th>Kind</th><th>Declaration</th><th>Where</th></tr></thead><tbody>'
                     + "".join(rows) + "</tbody></table></section>")
 
     if s["props"] or s["custom"] or s["states"]:
         menu.append(("props", "Properties and states"))
-        part = ['<section id="props"><h2>Properties, custom events and states</h2>']
+        part = [f'<section id="props"><h2>{name} declares these properties, custom events and states.</h2>']
         if s["props"]:
             part.append("<table><thead><tr><th>Property</th><th>Type</th><th>Flags</th><th>Where</th></tr></thead><tbody>"
                         + "".join(f'<tr><td><code>{esc(x["name"])}</code></td><td><code>{link_types(x["type"], known, p)}</code></td>'
                                   f'<td>{esc(x["flags"])}</td><td class="where"><a href="#L{x["line"]}">line {x["line"]}</a></td></tr>'
                                   for x in s["props"]) + "</tbody></table>")
         if s["custom"]:
-            part.append("<p>Custom events: " + ", ".join(f'<a href="#L{x["line"]}"><code>{esc(x["name"])}</code></a>'
-                                                        for x in s["custom"]) + ".</p>")
+            part.append("<p>Its custom events are " + ", ".join(f'<a href="#L{x["line"]}"><code>{esc(x["name"])}</code></a>'
+                                                               for x in s["custom"]) + ".</p>")
         if s["states"]:
-            part.append("<p>States: " + ", ".join(f'<a href="#L{x["line"]}"><code>{esc(x["name"])}</code></a>'
-                                                 + (" (starts here)" if x["auto"] else "") for x in s["states"]) + ".</p>")
+            part.append("<p>Its states are " + ", ".join(f'<a href="#L{x["line"]}"><code>{esc(x["name"])}</code></a>'
+                                                        + (" (the script starts in this one)" if x["auto"] else "")
+                                                        for x in s["states"]) + ".</p>")
         part.append("</section>")
         body.append("".join(part))
 
     if parents:
         menu.append(("inherited", "Inherited"))
-        part = ['<section id="inherited"><h2>Inherited from parent scripts</h2>']
+        part = [f'<section id="inherited"><h2>{name} inherits these functions and events from its parent scripts.</h2>']
         for par in parents:
             names = [m["name"] for m in par["members"] if m["kind"] in ("function", "event")]
-            part.append(f'<details><summary>{esc(par["name"])}: {len(names)} functions and events</summary><p class="cols">'
+            part.append(f'<details><summary>{esc(par["name"])} gives it {len(names)} functions and events.</summary><p class="cols">'
                         + " ".join(f'<a href="{page_name(par["name"])}#m-{esc(n.lower())}"><code>{esc(n)}</code></a>' for n in names)
                         + "</p></details>")
         part.append("</section>")
@@ -347,7 +360,7 @@ def script_page(s, scripts, known, children, callers, official, stamp):
 
     menu.append(("source", "Source"))
     src = highlight(s["text"], known, p)
-    body.append('<section id="source"><h2>Source</h2><pre class="src">'
+    body.append(f'<section id="source"><h2>This is the full source of {name}.</h2><pre class="src">'
                 + "".join(f'<span class="ln" id="L{i}"><a href="#L{i}">{i}</a></span>{t}\n' for i, t in enumerate(src, 1))
                 + "</pre></section>")
     return frame(f"{s['name']} - Papyrus Source", root, "\n".join(body), menu, stamp)
@@ -362,48 +375,317 @@ DIAGRAM = """<figure class="diagram"><svg viewBox="0 0 900 150" role="img" aria-
 </svg><figcaption>The site is rebuilt from your own sources whenever you run the command again, for example after a Creation Kit update.</figcaption></figure>"""
 
 
-def home_page(scripts, children, folders, n_members, n_calls, sources, stamp):
+SCRIPT_DIAGRAM = """<figure class="diagram"><svg viewBox="0 0 1150 150" role="img" aria-labelledby="sd-t">
+<title id="sd-t">A script goes from source file to compiled file to a record in a plugin, and the game then runs it by calling its events.</title>
+<g class="box"><rect x="10" y="30" width="255" height="90" rx="10"/><text x="137" y="62">A modder writes a script</text><text x="137" y="86">as a .psc source file in</text><text x="137" y="106">the Papyrus language.</text></g>
+<g class="box"><rect x="305" y="30" width="255" height="90" rx="10"/><text x="432" y="62">The compiler turns it into</text><text x="432" y="86">a .pex file, which the game</text><text x="432" y="106">loads from its Data folder.</text></g>
+<g class="box"><rect x="600" y="30" width="255" height="90" rx="10"/><text x="727" y="62">A record in a plugin, such</text><text x="727" y="86">as a quest or an object, names</text><text x="727" y="106">the script and its properties.</text></g>
+<g class="box"><rect x="895" y="30" width="255" height="90" rx="10"/><text x="1022" y="62">The game calls its events,</text><text x="1022" y="86">and the script calls functions</text><text x="1022" y="106">that change the game world.</text></g>
+<path class="arrow" d="M267 75 H298 M291 68 L300 75 L291 82"/><path class="arrow" d="M562 75 H593 M586 68 L595 75 L586 82"/><path class="arrow" d="M857 75 H888 M881 68 L890 75 L881 82"/>
+</svg><figcaption>A script runs only while a record that names it is loaded in the game.</figcaption></figure>"""
+
+# What a novice needs to know about scripts. Our own words; links go to script pages when those scripts exist.
+SCRIPT_INTRO = [
+    "Starfield runs small programs called scripts to make things happen in the game. A script can advance a "
+    "quest, open a door when you press a button, add an item to your inventory or show a message. Bethesda and "
+    "mod authors write scripts in a language called Papyrus.",
+    "A script is written as a source file that ends in .psc, and that source is what this site shows. The "
+    "Papyrus compiler, which comes with the Creation Kit, turns each source file into a compiled file that ends "
+    "in .pex. The game loads only the compiled files, either loose from its Data\\Scripts folder or from inside "
+    "its BA2 archives.",
+    "A script does nothing until a record in a plugin names it. In the Creation Kit, a modder attaches scripts to "
+    "records such as a quest, an object placed in the world, an alias in a quest or a magic effect. The record "
+    "also stores the script's property values, such as which door to open or which item to give. When the game "
+    "loads that record, it starts a copy of the script for it. The script's first line says what kind of thing "
+    "it belongs to: a script that extends {Quest} runs on a quest, and one that extends {ObjectReference} runs "
+    "on an object in the world.",
+    "The game and the script then talk through events and functions. When something happens, such as the player "
+    "activating an object, the game calls an event such as OnActivate on that object's scripts. The script "
+    "answers by calling functions. Some functions are written in Papyrus in other scripts. Native functions, "
+    "which these pages mark Native, are built into the game itself, and they are how a script really changes the "
+    "world, for example {ObjectReference}.AddItem or {ObjectReference}.Enable.",
+    "Many scripts on this site are fragments. The Creation Kit writes a fragment for each quest stage, scene, "
+    "dialogue line, terminal menu, AI package or perk entry that runs a few lines of script, so the fragment "
+    "folders hold thousands of very small scripts.",
+    "A script can also have states. Only one state is active at a time, and a function declared inside a state "
+    "replaces the normal one while that state is active. Some functions are Latent, which means the script waits "
+    "until they finish, as with {Utility}.Wait. The game keeps each running script's variables and state in your "
+    "save, so a script picks up where it left off when you load a game.",
+]
+
+# A line-by-line walkthrough of one short, widely reused Bethesda script. The tool ships only these explanations
+# and the patterns that find each line; the lines themselves come from the user's own sources at build time.
+WALK_SCRIPT = "DefaultSetGlobalOnTriggerEnter"
+WALK_STEPS = [
+    (r"(?i)^\s*scriptname\s+DefaultSetGlobalOnTriggerEnter\b",
+     "The Scriptname line names the script, and the name must match the file name. \"Extends ObjectReference\" "
+     "means the script goes on a reference, an object placed in the world. Here that object is a trigger, an "
+     "invisible box the player can walk into. Const means the script keeps no changing variables or states, so "
+     "there is nothing for the game to remember about it. Default only files the script under \"default\" in "
+     "the Creation Kit's add-script window, so level designers find it quickly."),
+    (r"^\s*\{",
+     "Text in curly braces is a documentation comment. The Creation Kit shows it as the script's description, "
+     "and the game ignores it."),
+    (r"(?i)^\s*GlobalVariable\s+Property\s+GlobalToSet\b",
+     "This line declares a property, a setting the modder chooses in the Creation Kit for each object that uses "
+     "the script. Its type is GlobalVariable, a record that holds one number the whole game can read; quest "
+     "conditions often check globals. \"Const auto\" means the value comes from the Creation Kit and the script "
+     "never changes it."),
+    (r"^\s*\{",
+     "Each property can have its own documentation comment, which the Creation Kit shows beside the property."),
+    (r"(?i)^\s*Float\s+Property\s+NumToSetGlobalTo\b",
+     "The second property is the number to store. Float means a number that can have decimals. Because each "
+     "object fills in its own properties, the same script sets different globals to different values all over "
+     "the game."),
+    (r"(?i)^\s*Event\s+OnTriggerEnter\b",
+     "An event is code the game runs when something happens. OnTriggerEnter runs each time something enters the "
+     "trigger, and akActionRef is whatever entered it: the player, a companion, a creature or a thrown object."),
+    (r"(?i)^\s*if\b.*GetPlayer",
+     "The If line tests a condition. Game.GetPlayer() is a native function that returns the player, so the lines "
+     "inside the If run only when the player walks in."),
+    (r"(?i)^\s*GlobalToSet\s*\.\s*SetValue\b",
+     "This line does the real work. It calls SetValue on the global from the first property and passes the "
+     "number from the second, so the global now holds that number. A quest stage, a dialogue condition or another "
+     "script can then react to the new value."),
+    (r"(?i)^\s*;\s*debug\.trace",
+     "A semicolon starts a comment, so the game skips this line. Bethesda left a Debug.Trace call here, switched "
+     "off. Switched on, it would write the global's new value to the Papyrus log, which is how modders check that "
+     "a script ran."),
+    (r"(?i)^\s*endif\b", "EndIf closes the If block."),
+    (r"(?i)^\s*endevent\b",
+     "EndEvent closes the event. The script has no other code, so it waits until something enters the trigger "
+     "again."),
+]
+
+# Plain descriptions of the folders in the Creation Kit's sources. Unknown folders get a general sentence.
+OWNERS = {"": "the base game", "fx": "the base game", "fxscripts": "the base game",
+          "nativeterminal": "the base game", "peo": "the base game", "fragments": "the base game",
+          "sfbgs00d": "the free update in SFBGS00D.esm", "sfbgs003": "the Trackers Alliance",
+          "dlc03": "the Trackers Alliance"}
+FOLDER_TEXT = {
+    "": "These are the base game's own scripts. They include the native scripts the engine defines, such as "
+        "Actor, Quest, ObjectReference and Debug, the general-purpose Default scripts, and the scripts for quests, "
+        "cities and activities.",
+    "fx": "This folder holds a visual-effects script that sets off an explosion on an animation event.",
+    "fxscripts": "This folder holds visual-effects scripts for camera shakes, effect shaders and landing effects.",
+    "nativeterminal": "This folder holds the scripts behind terminals that control alarms, containers, display "
+                      "cases, doors, robots and traps.",
+    "peo": "This folder holds the scripts for the sleep and sustenance (food and drink) effects.",
+    "sfbgs003": "This folder holds the Trackers Alliance scripts (SFBGS003.esm) for bounty missions, the bounty "
+                "scanner and wanted posters.",
+    "dlc03": "This folder holds more Trackers Alliance scripts, for the Trackers' headquarters and the bounty "
+             "\"The Starjacker\" (SFTA00).",
+    "sfbgs00d": "This folder holds the scripts of the free update in SFBGS00D.esm, which every copy of the game "
+                "loads. Its features include legendary crafting, cruise mode and new elite crew.",
+}
+FRAGMENT_TEXT = {
+    "quests": "These fragments run when a quest reaches a stage.",
+    "scenes": "These fragments run at points in a scene, such as when a phase begins or ends.",
+    "topicinfos": "These fragments run when a line of dialogue begins or ends.",
+    "terminals": "These fragments run when the player picks an item in a terminal menu.",
+    "packages": "These fragments run when an AI package begins, ends or changes.",
+    "perks": "These fragments run from perk entries, such as an activation choice that a perk adds.",
+}
+
+# The site's own changes, newest first (dates are release dates of sf-papyrus-ref).
+NEWS = [
+    ("2026-11-21", "sf-papyrus-ref 0.2.1 added this What's new list, the game and Creation Kit versions, an "
+                   "explanation of what a script is and how the game uses it, a line-by-line walkthrough of one "
+                   "script and a description of each folder."),
+    ("2026-11-21", "sf-papyrus-ref 0.2.0 introduced this site."),
+]
+
+
+def folder_text(folder):
+    parts = folder.lower().split("/")
+    if "fragments" in parts:
+        i = parts.index("fragments")
+        kind = parts[i + 1] if i + 1 < len(parts) else ""
+        first = FRAGMENT_TEXT.get(kind, "These are fragments, small scripts the Creation Kit writes for records.")
+        owner = OWNERS.get(parts[0] if i else "", "")
+        return first + (f" They belong to {owner}." if owner else "")
+    if parts[0] in FOLDER_TEXT and len(parts) == 1:
+        return FOLDER_TEXT[parts[0]]
+    return f"This folder holds scripts in the {folder.replace('/', ':')} namespace."
+
+
+def exe_version(path):
+    """The file version of a Windows program (from its VS_FIXEDFILEINFO), or None. Reads from the end, where the
+    version resource usually is."""
+    sig = b"\xbd\x04\xef\xfe"
+    try:
+        size = os.path.getsize(path)
+        with open(path, "rb") as f:
+            end, chunk = size, 8 << 20
+            while end > 0:
+                start = max(0, end - chunk)
+                f.seek(start)
+                data = f.read(end - start + 16)
+                i = data.rfind(sig)
+                if i >= 0 and i + 16 <= len(data):
+                    ms, ls = struct.unpack_from("<II", data, i + 8)
+                    return f"{ms >> 16}.{ms & 0xFFFF}.{ls >> 16}.{ls & 0xFFFF}"
+                end = start
+    except (OSError, struct.error):
+        pass
+    return None
+
+
+def find_versions(sources):
+    """(game version, Creation Kit version), each None when it can't be found near the sources."""
+    d = os.path.abspath(sources)
+    for _ in range(6):
+        if os.path.isfile(os.path.join(d, "Starfield.exe")):
+            return exe_version(os.path.join(d, "Starfield.exe")), exe_version(os.path.join(d, "CreationKit.exe"))
+        parent = os.path.dirname(d)
+        if parent == d:
+            break
+        d = parent
+    return None, None
+
+
+def owner_counts(scripts):
+    counts = {}
+    for s in scripts.values():
+        top = folder_of(s["file"]).split("/")[0].lower()
+        owner = OWNERS.get(top, f"the {top} folder")
+        counts[owner] = counts.get(owner, 0) + 1
+    return counts
+
+
+def content_section(scripts, game, ck):
+    counts = owner_counts(scripts)
+    names = " ".join(scripts)
+    items = []
+    labels = {"the base game": "The base game (Starfield.esm)",
+              "the free update in SFBGS00D.esm": "The free update in SFBGS00D.esm, which every copy of the game loads,",
+              "the Trackers Alliance": "The Trackers Alliance (SFBGS003.esm)"}
+    for owner, n in sorted(counts.items(), key=lambda x: -x[1]):
+        label = labels.get(owner, owner[0].upper() + owner[1:])
+        items.append(f"<li>{esc(label)} has {n} script{'s' if n != 1 else ''} here.</li>")
+    missing = []
+    if "sfbgs001" not in names:
+        missing.append("Shattered Space")
+    if "sfter" not in names:
+        missing.append("the Terran Armada Creation")
+    ver = (f"Bethesda ships these sources with the Creation Kit {esc(ck)}" if ck else
+           "Bethesda ships these sources with the Creation Kit")
+    ver += f", and the game installed next to it is version {esc(game)}." if game else "."
+    text = (f"<p>Every script on this site is Starfield Papyrus source. {ver} The sources cover this "
+            f"content:</p><ul>{''.join(items)}</ul>")
+    if missing:
+        text += ("<p>The Creation Kit's sources don't include " + " or ".join(missing) + ", so their scripts "
+                 "are not on this site.</p>")
+    return '<section id="content"><h2>These are the Starfield scripts that the Creation Kit includes.</h2>' + text + "</section>"
+
+
+def walkthrough_section(scripts, known):
+    s = scripts.get(WALK_SCRIPT.lower())
+    if not s:
+        return ""
+    lines = s["text"].replace("\r\n", "\n").replace("\r", "\n").split("\n")
+    rows, pos = [], 0
+    for pattern, text in WALK_STEPS:
+        hit = next((i for i in range(pos, len(lines)) if re.search(pattern, lines[i])), None)
+        if hit is None:
+            code = '<td class="where">not found</td><td><em>This line is not in your version of the script.</em></td>'
+        else:
+            pos = hit + 1
+            code = (f'<td class="where"><a href="s/{page_name(s["name"])}#L{hit + 1}">{hit + 1}</a></td>'
+                    f'<td><pre class="src one">{highlight(lines[hit].strip(), known, "s/")[0]}</pre></td>')
+        rows.append(f"<tr>{code}<td>{esc(text)}</td></tr>")
+    link = f'<a href="s/{page_name(s["name"])}">{esc(s["name"])}</a>'
+    return ('<section id="walk"><h2>Here is one script, explained line by line.</h2>'
+            f"<p>{link} is one of Bethesda's general-purpose scripts. A level designer can attach it to any "
+            "trigger, so that walking into a place sets a global variable that a quest or a conversation can "
+            "check. It is short, and it shows most of what a script is made of.</p>"
+            '<table class="walk"><thead><tr><th>Line</th><th>Code</th><th>What it does</th></tr></thead><tbody>'
+            + "".join(rows) + "</tbody></table>"
+            "<p>To use this script in your own mod, you attach it to a trigger in the Creation Kit and fill in its "
+            "two properties. You don't write any code.</p></section>")
+
+
+def whats_new(builds):
+    items = [(d, esc(t), "") for d, t in NEWS]
+    for b in builds:
+        extra = ""
+        for key, verb in (("added", "were added"), ("changed", "changed"), ("removed", "were removed")):
+            names = b.get(key) or []
+            if names:
+                shown = (", ".join(f'<a href="s/{page_name(n)}">{esc(n)}</a>' if key != "removed" else esc(n)
+                                   for n in names))
+                what = f"This script {verb.replace('were', 'was')}" if len(names) == 1 else f"These {len(names)} scripts {verb}"
+                extra += (f"<details><summary>{what}.</summary>"
+                          f'<p class="cols">{shown}.</p></details>')
+        items.append((str(b.get("built", ""))[:10], esc(b.get("text", "")), extra))
+    items.sort(key=lambda x: x[0], reverse=True)
+    lis = "".join(f'<li><b>{esc(d)}:</b> {t}{extra}</li>' for d, t, extra in items[:8])
+    return '<section id="news"><h2>This is what\'s new on the site.</h2><ul class="news">' + lis + "</ul></section>"
+
+
+def home_page(scripts, children, folders, n_members, n_calls, sources, stamp, game=None, ck=None, builds=()):
     roots = sorted((s for s in scripts.values() if not s["extends"] or s["extends"].lower() not in scripts),
                    key=lambda s: -len(children.get(s["name"].lower(), [])))
     top = sorted(scripts.values(), key=lambda s: -len(children.get(s["name"].lower(), [])))[:24]
+    known = {k: s["name"] for k, s in scripts.items()}
+
+    def link(word):
+        return f'<a href="s/{page_name(known[word.lower()])}">{word}</a>' if word.lower() in known else word
+    intro = "".join("<p>" + re.sub(r"\{(\w+)\}", lambda m: link(m.group(1)), esc(p)) + "</p>" for p in SCRIPT_INTRO)
+    versions = (f" They come from the Creation Kit {esc(ck)}" if ck else " They come from your Creation Kit")
+    versions += f", for Starfield {esc(game)}." if game else "."
     body = [
         "<h1>Papyrus Source</h1>",
-        f'<p class="lede">{len(scripts)} scripts with {n_members} functions, events and structs, and {n_calls} '
-        "calls linked to the function they reach. Type in the box at the top to find a script, function, event or "
-        "property, or browse the A-Z list and the inheritance tree.</p>",
-        f'<p class="note">{esc(NOTE)} Read from <code>{esc(sources)}</code>.</p>',
-        '<section id="how"><h2>How the site is made</h2>' + DIAGRAM + "</section>",
-        '<section id="folders"><h2>Scripts by folder</h2><table><thead><tr><th>Folder</th><th>Scripts</th></tr></thead><tbody>'
-        + "".join(f'<tr><td><a href="az.html#f-{esc(re.sub(r"[^A-Za-z0-9_-]", "_", f or "top"))}">{esc(f or "(top level)")}</a></td><td>{n}</td></tr>'
+        f'<p class="lede">This site holds Starfield\'s Papyrus script sources: {len(scripts)} scripts with '
+        f"{n_members} functions, events and structs.{versions} It links {n_calls} calls to the function they "
+        "reach. Type in the box at the top to find a script, function, event or property, or browse the A-Z list "
+        "and the inheritance tree.</p>",
+        f'<p class="note">{esc(NOTE)} They were read from <code>{esc(sources)}</code>.</p>',
+        whats_new(builds),
+        '<section id="scripts"><h2>A script is a small program that the game runs.</h2>' + intro + SCRIPT_DIAGRAM
+        + "</section>",
+        content_section(scripts, game, ck),
+        walkthrough_section(scripts, known),
+        '<section id="folders"><h2>The scripts are grouped by the folder they came from.</h2><table><thead><tr>'
+        "<th>Folder</th><th>Scripts</th><th>What the scripts are</th></tr></thead><tbody>"
+        + "".join(f'<tr><td><a href="az.html#f-{esc(re.sub(r"[^A-Za-z0-9_-]", "_", f or "top"))}">'
+                  f'{esc(f or "(top level)")}</a></td><td>{n}</td><td>{esc(folder_text(f))}</td></tr>'
                   for f, n in sorted(folders.items())) + "</tbody></table></section>",
-        '<section id="parents"><h2>Most extended scripts</h2><p>The number is how many scripts extend each one '
-        'directly.</p><ul class="cols">'
+        '<section id="parents"><h2>These scripts are extended most often.</h2><p>The number is how many scripts '
+        'extend each one directly.</p><ul class="cols">'
         + "".join(f'<li><a href="s/{page_name(s["name"])}">{esc(s["name"])}</a> '
                   f'<span class="count">{len(children.get(s["name"].lower(), []))}</span></li>'
-                  for s in top) + f"</ul><p>{len(roots)} scripts start a family (they extend nothing, or a script "
-        "that is not in these sources).</p></section>",
-        '<section id="reading"><h2>Reading a script page</h2><p>Each script page lists its functions, events and '
-        "structs with their declarations. Flags such as Latent, Non-delayed, DebugOnly and BetaOnly come from the "
-        "official Creation Kit wiki list that ships with sf-papyrus-ref, and Native and Global come from the source. "
-        "\"Called from\" lists every place another script calls that function, when the caller's type can be worked "
-        "out from the source (a call through a chain such as a.b.Name() cannot, so the lists can be short). "
-        "Line links jump into the highlighted source at the bottom of the page.</p></section>",
+                  for s in top) + f"</ul><p>{len(roots)} scripts start a family, because they extend nothing or "
+        "extend a script that is not in these sources.</p></section>",
+        '<section id="how"><h2>Your own Creation Kit\'s sources become these pages.</h2>' + DIAGRAM + "</section>",
+        '<section id="reading"><h2>This is how to read a script page.</h2><p>Each script page lists its functions, '
+        "events and structs with their declarations. Flags such as Latent, Non-delayed, DebugOnly and BetaOnly "
+        "come from the official Creation Kit wiki list that ships with sf-papyrus-ref, and Native and Global come "
+        "from the source. Under each function, a line such as \"3 places call this function\" opens a list of the "
+        "places another script calls it. A call is listed when the caller's type can be worked out from the "
+        "source, and a call through a chain such as a.b.Name() can't be, so the lists can be short. Line links "
+        "jump into the highlighted source at the bottom of the page.</p></section>",
     ]
-    menu = [("how", "How the site is made"), ("folders", "Scripts by folder"), ("parents", "Most extended"),
-            ("reading", "Reading a page")]
-    return frame("Papyrus Source", "", "\n".join(body), menu, stamp)
+    menu = [("news", "What's new"), ("scripts", "What a script is"), ("content", "What is included"),
+            ("walk", "One script explained"), ("folders", "Scripts by folder"), ("parents", "Most extended"),
+            ("how", "How the site is made"), ("reading", "Reading a page")]
+    if not walkthrough_section(scripts, known):
+        menu = [m for m in menu if m[0] != "walk"]
+    return frame("Papyrus Source", "", "\n".join(b for b in body if b), menu, stamp)
 
 
 def az_page(scripts, stamp):
     by_folder = {}
     for s in scripts.values():
         by_folder.setdefault(folder_of(s["file"]), []).append(s["name"])
-    menu, body = [], ["<h1>All scripts, A-Z</h1>"]
+    menu, body = [], ["<h1>Every script is listed here from A to Z, folder by folder.</h1>"]
     for f in sorted(by_folder):
         fid = "f-" + re.sub(r"[^A-Za-z0-9_-]", "_", f or "top")
         menu.append((fid, f or "(top level)"))
         names = sorted(by_folder[f], key=str.lower)
-        body.append(f'<section id="{fid}"><h2>{esc(f or "(top level)")} ({len(names)})</h2><p class="cols">'
+        where = f"The {esc(f)} folder" if f else "The top folder"
+        count = f"{len(names)} script{'s' if len(names) != 1 else ''}"
+        body.append(f'<section id="{fid}"><h2>{where} holds {count}.</h2><p>{esc(folder_text(f))}</p><p class="cols">'
                     + " ".join(f'<a href="s/{page_name(n)}">{esc(n)}</a>' for n in names) + "</p></section>")
     return frame("All scripts - Papyrus Source", "", "\n".join(body), menu, stamp)
 
@@ -422,12 +704,13 @@ def tree_page(scripts, children, stamp):
                     for s in scripts.values() if not s["extends"] or s["extends"].lower() not in scripts}, key=str.lower)
     big = [r for r in roots if children.get(r.lower())]
     lone = [r for r in roots if not children.get(r.lower())]
-    body = ["<h1>Inheritance tree</h1>",
+    body = ["<h1>The inheritance tree shows which script extends which.</h1>",
             "<p>Each script is listed under the script it extends. The number is how many scripts extend it "
             "directly. Click a name to open its page, or the arrow to open its branch.</p>",
-            '<section id="families"><h2>Families</h2><ul class="tree">' + "".join(node(r, 0, frozenset()) for r in big)
-            + "</ul></section>",
-            '<section id="alone"><h2>Scripts that nothing extends and that extend nothing here</h2><p class="cols">'
+            '<section id="families"><h2>These scripts start the families.</h2><ul class="tree">'
+            + "".join(node(r, 0, frozenset()) for r in big) + "</ul></section>",
+            '<section id="alone"><h2>These scripts stand alone, because nothing here extends them and they extend '
+            'nothing here.</h2><p class="cols">'
             + " ".join(f'<a href="s/{page_name(r)}">{esc(r)}</a>' if r.lower() in scripts else esc(r) for r in lone)
             + "</p></section>"]
     return frame("Inheritance tree - Papyrus Source", "", "\n".join(body),
@@ -456,6 +739,57 @@ def search_index(scripts):
         for x in s["props"]:
             rows.append([x["name"], s["name"], "p", pg, x["line"]])
     return rows
+
+
+def count(items, one, many):
+    return f"1 script {one}" if len(items) == 1 else f"{len(items)} scripts {many}"
+
+
+def update_manifest(out, scripts, stamp, game, ck, log):
+    """Compare this build's scripts with the last build's (kept in a hidden file in the site folder), record a
+    What's new entry when anything changed, and return the recorded builds, oldest first (at most 10)."""
+    path = os.path.join(out, MANIFEST)
+    prev = None
+    try:
+        with open(path, encoding="utf-8") as f:
+            prev = json.load(f)
+        if not isinstance(prev.get("scripts"), dict) or not isinstance(prev.get("builds"), list):
+            prev = None
+    except (OSError, ValueError, AttributeError):
+        prev = None
+    now = {}
+    for key, s in scripts.items():
+        text = "\n".join(x.rstrip() for x in s["text"].replace("\r\n", "\n").replace("\r", "\n").split("\n")).strip()
+        now[key] = [s["name"], hashlib.sha1(text.encode("utf-8")).hexdigest()]
+    builds = prev["builds"] if prev else []
+    ckt = f"the Creation Kit {ck}" if ck else "your Creation Kit"
+    if not prev:
+        entry = {"built": stamp, "game": game, "ck": ck,
+                 "text": f"The site was built for the first time, from the sources in {ckt} ({len(now)} scripts)."}
+    else:
+        old = prev["scripts"]
+        added = sorted(now[k][0] for k in now.keys() - old.keys())
+        removed = sorted(old[k][0] for k in old.keys() - now.keys())
+        changed = sorted(now[k][0] for k in now.keys() & old.keys() if now[k][1] != old[k][1])
+        last = builds[-1] if builds else {}
+        versions = (game, ck) != (last.get("game"), last.get("ck"))
+        entry = None
+        if added or removed or changed or versions:
+            was = f", which replaced the Creation Kit {last.get('ck')}" if ck and last.get("ck") and last.get("ck") != ck else ""
+            entry = {"built": stamp, "game": game, "ck": ck,
+                     "text": f"The site was rebuilt from the sources in {ckt}{was}. Since the build of "
+                             f"{str(last.get('built', 'before'))[:10]}, {count(added, 'was added', 'were added')}, "
+                             f"{count(removed, 'was removed', 'were removed')} and "
+                             f"{count(changed, 'changed', 'changed')}.",
+                     "added": added[:300], "removed": removed[:300], "changed": changed[:300]}
+        log.info("Since the last build: %s", entry["text"] if entry else "no script changed")
+    if entry:
+        builds = (builds + [entry])[-10:]
+    try:
+        write(path, json.dumps({"format": 1, "builds": builds, "scripts": now}, ensure_ascii=False))
+    except OSError as e:
+        log.warning("Could not save %s (%s); What's new will not know about this build.", path, e)
+    return builds
 
 
 def write(path, text):
@@ -490,7 +824,11 @@ def build(pscread, sources_iter, sources_label, out, official, stamp, log, asset
           "window.SFPR_INDEX=" + json.dumps(search_index(scripts), ensure_ascii=False, separators=(",", ":")) + ";\n")
     n_members = sum(len(s["members"]) for s in scripts.values())
     n_calls = sum(len(v) for v in callers.values())
-    write(os.path.join(out, "index.html"), home_page(scripts, children, folders, n_members, n_calls, sources_label, stamp))
+    game, ck = find_versions(sources_label)
+    log.info("Game version %s, Creation Kit version %s", game or "unknown", ck or "unknown")
+    builds = update_manifest(out, scripts, stamp, game, ck, log)
+    write(os.path.join(out, "index.html"), home_page(scripts, children, folders, n_members, n_calls, sources_label,
+                                                     stamp, game, ck, builds))
     write(os.path.join(out, "az.html"), az_page(scripts, stamp))
     write(os.path.join(out, "tree.html"), tree_page(scripts, children, stamp))
     wanted = {"index.html", "az.html", "tree.html"}

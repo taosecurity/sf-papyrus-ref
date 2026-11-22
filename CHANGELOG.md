@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.2.1 (2026-11-21)
+
+### What's new
+
+- **The `html` front page explains the scripts.** It says what a script is and how the game uses it, with a diagram. It names the game and Creation Kit versions (read from `Starfield.exe` and `CreationKit.exe`) and the content the sources cover: the base game, the free update in SFBGS00D.esm and the Trackers Alliance.
+- **One script is explained line by line.** The front page walks a novice through `DefaultSetGlobalOnTriggerEnter`. The release ships only the explanations; the lines come from your own Creation Kit when the site is built.
+- **Each folder has a description.** The "Scripts by folder" table and the A-Z page say what kind of scripts each folder holds.
+- **What's new lists script changes.** Each rebuild compares the scripts with the last build and lists the ones that were added, removed or changed, for example after a Creation Kit update.
+
+### Example
+
+    > sf-papyrus-ref html
+    sf-papyrus-ref 0.2.1 by Richard Bejtlich - MIT - https://github.com/taosecurity/sf-papyrus-ref
+    It read 1702 scripts (8381 functions, events and structs) from C:\Program Files (x86)\Steam\steamapps\common\Starfield\Tools\ContentResources.zip.
+    It linked 30068 calls to the function they reach.
+    It wrote 1705 pages to C:\Users\<you>\AppData\Local\sf-papyrus-ref\site. Open C:\Users\<you>\AppData\Local\sf-papyrus-ref\site\index.html in your browser.
+    These pages hold Bethesda's script text from your own install: keep them on your PC or home network, and never publish them.
+
+### Fixes
+
+- The site's headings, summaries and footer are now full sentences, and so are the summary lines that `html`, `compare`, `check`, `build-local`, `data` and `diff` print.
+
 ## 0.2.0 (2026-11-21)
 
 ### What's new

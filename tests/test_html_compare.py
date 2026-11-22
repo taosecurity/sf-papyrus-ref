@@ -2,6 +2,7 @@
 # SPDX-FileCopyrightText: 2026 Richard Bejtlich
 """Tests for the html and compare commands. Run: python -I -m unittest discover -s tests (from the repo folder)."""
 import contextlib
+import html
 import importlib.util
 import io
 import json
@@ -71,8 +72,8 @@ class Html(Base):
                      "assets/site.css", "assets/site.js", "assets/search-index.js"):
             self.assertTrue(os.path.isfile(os.path.join(self.out, name)), name)
         parent = self.page("s/Parent.html")
-        self.assertIn("Called from 2 places", parent)  # Slow(): on self and through a cast
-        self.assertIn("Called from 1 place<", parent)  # Peek(): through a typed property
+        self.assertIn("2 places call this function.", parent)  # Slow(): on self and through a cast
+        self.assertIn("1 place calls this function.", parent)  # Peek(): through a typed property
         self.assertIn('href="Child.html#L8"', parent)
         self.assertIn("noindex", parent)
         child = self.page("s/Child.html")
@@ -81,8 +82,52 @@ class Html(Base):
         self.assertIn("Mandatory", child)
         self.assertIn("<td>Auto Hidden</td>", child)  # the default value True is not a flag
         self.assertIn("<td>AutoReadOnly</td>", child)
-        self.assertIn("ScriptObject</p>", self.page("s/NS.Deep.html"))  # the outside ancestor ends the chain
+        self.assertIn("ScriptObject.</p>", self.page("s/NS.Deep.html"))  # the outside ancestor ends the chain
         self.assertIn('id="m-pair"', parent)  # anchors are lowercase, as Papyrus names ignore case
+
+    def test_front_page_sections(self):
+        # A made-up stand-in for the walkthrough script: only some of the explained lines are in it.
+        p = os.path.join(self.src, "Scripts", "Source", "DefaultSetGlobalOnTriggerEnter.psc")
+        with open(p, "w", encoding="utf-8") as f:
+            f.write("Scriptname DefaultSetGlobalOnTriggerEnter extends ObjectReference\n"
+                    "Event OnTriggerEnter(ObjectReference akActionRef)\nEndEvent\n")
+        code, _, err = call("html", "--sources", self.src, "--out", self.out)
+        self.assertEqual(code, 0, err)
+        home = html.unescape(self.page("index.html"))
+        for heading in ("This is what's new on the site.", "A script is a small program that the game runs.",
+                        "These are the Starfield scripts that the Creation Kit includes.",
+                        "Here is one script, explained line by line.",
+                        "The scripts are grouped by the folder they came from."):
+            self.assertIn(heading, home)
+        self.assertIn("The site was built for the first time", home)
+        self.assertIn("This line is not in your version of the script.", home)  # the If line is missing
+        self.assertIn('href="s/DefaultSetGlobalOnTriggerEnter.html#L2"', home)  # the event line was found
+        self.assertIn("These are the base game's own scripts.", home)  # the folder description column
+        self.assertIn("The NS folder holds 1 script.", self.page("az.html"))
+
+    def test_whats_new_lists_changes_between_builds(self):
+        call("html", "--sources", self.src, "--out", self.out)
+        with open(os.path.join(self.src, "Scripts", "Source", "Parent.psc"), "a", encoding="utf-8") as f:
+            f.write("Function Extra() native\n")
+        os.remove(os.path.join(self.src, "Scripts", "Source", "NS", "Deep.psc"))
+        call("html", "--sources", self.src, "--out", self.out)
+        home = self.page("index.html")
+        self.assertIn("0 scripts were added, 1 script was removed and 1 script changed.", home)
+        self.assertIn("This script changed.", home)
+        self.assertIn('<a href="s/Parent.html">Parent</a>', home)
+        call("html", "--sources", self.src, "--out", self.out)  # nothing changed: no new entry
+        self.assertEqual(self.page("index.html").count("The site was rebuilt"), 1)
+
+    def test_exe_version(self):
+        htmlsite = ref_mod.htmlsite
+        p = os.path.join(self.tmp.name, "Starfield.exe")
+        import struct
+        with open(p, "wb") as f:
+            f.write(b"MZ" + b"\0" * 1000 + b"\xbd\x04\xef\xfe" + struct.pack("<III", 0x10000, 0x10010, 0xF40000)
+                    + b"\0" * 100)
+        self.assertEqual(htmlsite.exe_version(p), "1.16.244.0")
+        self.assertEqual(htmlsite.find_versions(os.path.join(self.tmp.name, "Tools", "x.zip"))[0], "1.16.244.0")
+        self.assertIsNone(htmlsite.exe_version(os.path.join(self.tmp.name, "missing.exe")))
 
     def test_source_text_is_escaped_and_no_inline_scripts(self):
         call("html", "--sources", self.src, "--out", self.out)
@@ -152,7 +197,7 @@ class Compare(Base):
         p = self.write("Parent.psc", SOURCES["Scripts/Source/Parent.psc"])
         code, out, _ = call("compare", p, "--sources", self.src)
         self.assertEqual(code, 0)
-        self.assertIn("1 identical, 0 changed, 0 not from the Creation Kit", out)
+        self.assertIn("1 is identical, 0 are changed and 0 are not from the Creation Kit", out)
 
     def test_bom_is_ignored(self):
         p = self.write("Parent.psc", "﻿" + SOURCES["Scripts/Source/Parent.psc"])
