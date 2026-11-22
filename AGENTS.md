@@ -76,7 +76,7 @@ It prints `Debug.Notification  (function)`, then `Flags: DebugOnly`, and exits w
 
       python -I sf_papyrus_ref.py compare "<mod folder>" --json
 
-  Each result has `status` (`identical`, `changed` or `not-in-ck`), `ck_file`, and for changed files `lines_added` and `lines_removed`. It exits with 0 when everything is identical, and with 1 otherwise.
+  Each result has `file`, `script` (the name on its Scriptname line, or empty), `status` (`identical`, `changed` or `not-in-ck`), `ck_file`, and for changed files `lines_added` and `lines_removed`. A file whose Scriptname line can't be read has an empty `script`, the status `not-in-ck` and a `note` that says so. It exits with 0 when everything is identical, and with 1 otherwise.
 
 ## 6. MCP server for Claude Code
 

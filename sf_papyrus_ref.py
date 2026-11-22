@@ -537,20 +537,21 @@ SITE_MARK = ".sf-papyrus-ref-site"
 # The whole name, then a space or the line's end: odd text after it must not turn a named script into a
 # file-name match, and a broken name (Foo.Bar, Foo:) must not match a shorter one.
 SCRIPTNAME_START = re.compile(rf"(?i)^\s*scriptname\s+((?:{pscread.IDENT}:)*{pscread.IDENT})(?=\s|$)")
+# Any other line that starts with the word Scriptname, except an assignment to a variable of that name.
+SCRIPTNAME_BROKEN = re.compile(r"(?i)^\s*scriptname\b(?!\s*=)")
+UNREADABLE = object()  # what script_name returns for a Scriptname line it can't read
 
 
 def script_name(text):
-    """The name on the script's Scriptname line, ignoring comments (so a commented-out line never counts)."""
+    """The name on the script's Scriptname line, ignoring comments (so a commented-out line never counts).
+    "" when there is none; UNREADABLE when the line is there but broken (never match such a file by name)."""
     for _, line in pscread.clean(text):
         m = SCRIPTNAME_START.match(line)
         if m:
             return m.group(1)
-        if re.match(r"(?i)^\s*scriptname\s+[^\s=]", line):
-            return UNREADABLE  # a Scriptname line that can't be read: never match it by file name
+        if SCRIPTNAME_BROKEN.match(line):
+            return UNREADABLE
     return ""
-
-
-UNREADABLE = "?"
 
 
 def default_site():
@@ -648,11 +649,12 @@ def cmd_compare(ref, a):
         for rel, text in iter_sources(path, include_fragments=True):
             name = script_name(text)
             entry = (rel.replace("\\", "/"), text)
-            if name == UNREADABLE:
-                continue  # never matched, by name or by file name
+            base = os.path.basename(rel.replace("\\", "/")).lower()
+            if name is UNREADABLE:
+                by_file[base] = None  # never matched itself, and its file name stays ambiguous
+                continue
             if name:
                 by_name.setdefault(name.lower(), entry)
-            base = os.path.basename(rel.replace("\\", "/")).lower()
             by_file[base] = None if base in by_file else entry  # a file name used twice matches nothing
     except (OSError, zipfile.BadZipFile) as e:
         print(f"Error: could not read the sources {path} ({e}).", file=sys.stderr)
@@ -663,7 +665,7 @@ def cmd_compare(ref, a):
         name = script_name(text)
         # The file name is used only when the file has no Scriptname line: a mod's own script that shares a
         # file name with one of Bethesda's is not a copy of it.
-        unreadable = name == UNREADABLE
+        unreadable = name is UNREADABLE
         if unreadable:
             name, ck = "", None
         else:

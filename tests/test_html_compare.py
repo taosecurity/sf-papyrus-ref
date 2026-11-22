@@ -172,7 +172,8 @@ class Compare(Base):
         self.assertEqual((r["script"], r["status"]), ("Brand:New", "not-in-ck"))
 
     def test_broken_scriptname_never_matches_a_shorter_name_or_the_file_name(self):
-        for text in ("Scriptname Parent.Extra extends Quest\n", "Scriptname Parent:\n"):
+        for text in ("Scriptname Parent.Extra extends Quest\n", "Scriptname Parent:\n", "Scriptname\n",
+                     "Scriptname:Parent\n"):
             p = self.write("Parent.psc", text)
             code, out, _ = call("compare", p, "--sources", self.src, "--json")
             r = json.loads(out)["results"][0]

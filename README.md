@@ -217,6 +217,7 @@ Compared 3 scripts with C:\Program Files (x86)\Steam\steamapps\common\Starfield\
 - Without `--all`, identical files are left out of the list. They are still counted.
 - A **changed** script is a copy of one of Bethesda's scripts with edits. When two mods change the same script, they conflict: only one compiled copy can be in the game's folder, and the mod your mod manager installs last wins.
 - `--json` gives every result, with the lines added and removed.
+- A file whose `Scriptname` line is there but can't be read (for example `Scriptname Foo.Bar`) is reported as not from the Creation Kit, with a note that says so. It is never matched by its file name.
 - It compares against the fragments too, so it always reads all of your Creation Kit's scripts.
 
 ## check: check your scripts
