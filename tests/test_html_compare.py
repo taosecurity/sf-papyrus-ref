@@ -179,9 +179,11 @@ class Compare(Base):
             r = json.loads(out)["results"][0]
             self.assertEqual((r["status"], r["script"]), ("not-in-ck", ""), text)
             self.assertIn("could not be read", r["note"])
-        p = self.write("Parent.psc", "ScriptName = 1\n")  # not a Scriptname line: the file name decides
-        code, out, _ = call("compare", p, "--sources", self.src, "--json")
-        self.assertEqual(json.loads(out)["results"][0]["status"], "changed")
+        for text in ("ScriptName = 1\n", "ScriptName += 1\n", "ScriptName.X = 1\n", "ScriptName[0] = 1\n",
+                     "ScriptName()\n"):  # statements, not Scriptname lines: the file name decides
+            p = self.write("Parent.psc", text)
+            code, out, _ = call("compare", p, "--sources", self.src, "--json")
+            self.assertEqual(json.loads(out)["results"][0]["status"], "changed", text)
 
     def test_trailing_text_after_the_name_still_matches(self):
         p = self.write("Other.psc", "Scriptname Parent extends ScriptObject Native Hidden , odd\n")

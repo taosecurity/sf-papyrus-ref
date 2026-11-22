@@ -537,8 +537,10 @@ SITE_MARK = ".sf-papyrus-ref-site"
 # The whole name, then a space or the line's end: odd text after it must not turn a named script into a
 # file-name match, and a broken name (Foo.Bar, Foo:) must not match a shorter one.
 SCRIPTNAME_START = re.compile(rf"(?i)^\s*scriptname\s+((?:{pscread.IDENT}:)*{pscread.IDENT})(?=\s|$)")
-# Any other line that starts with the word Scriptname, except an assignment to a variable of that name.
-SCRIPTNAME_BROKEN = re.compile(r"(?i)^\s*scriptname\b(?!\s*=)")
+# A Scriptname line SCRIPTNAME_START can't read: the word alone, "Scriptname:Foo", or the word, a space and
+# something that is not an assignment. "ScriptName = 1", "ScriptName += 1", "ScriptName.X = 1",
+# "ScriptName[0]" and "ScriptName()" are statements about a variable of that name, not Scriptname lines.
+SCRIPTNAME_BROKEN = re.compile(r"(?i)^\s*scriptname(?:\s*$|\s*:|\s+(?![+\-*/%]?=))")
 UNREADABLE = object()  # what script_name returns for a Scriptname line it can't read
 
 
