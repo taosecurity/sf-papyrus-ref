@@ -9,6 +9,10 @@
   python -I sf_papyrus_ref.py build-local [--sources <path>]  read YOUR Creation Kit's script sources into a
                                                                local cache: signatures and parent scripts
   python -I sf_papyrus_ref.py diff                            the official list against your sources
+  python -I sf_papyrus_ref.py html [--out <folder>]           a browsable website of YOUR Creation Kit's scripts
+                                                               (keep it on your PC or home network)
+  python -I sf_papyrus_ref.py compare <files or folders>      .psc files against your Creation Kit's sources:
+                                                               identical, changed or not from the CK
   python -I sf_papyrus_ref.py check <files or folders>        BetaOnly, DebugOnly and Latent-in-a-loop calls in
                                                                .psc or .pex scripts
 
@@ -22,8 +26,9 @@ check also takes --allow Script.Name (never report it), --creations (DebugOnly i
 The shipped list holds names, flags and links to the official Creation Kit wiki only. It never guesses: a name
 that is not in the list is reported as not found, with near matches. Signatures come only from your own sources.
 Exit codes: lookup and script 0 found, 1 not found; list 0 matched, 1 none; check 0 clean, 1 findings;
+compare 0 all identical, 1 some changed or not from the CK;
 2 bad arguments, an unreadable data file or script, or no sources found.
-It only reads files. It writes only the local cache (build-local) and the --log file.
+It only reads files. It writes only the local cache (build-local), the site folder (html) and the --log file.
 """
 import argparse
 import datetime
@@ -36,7 +41,7 @@ import re
 import sys
 import zipfile
 
-VERSION = "0.1.0"
+VERSION = "0.2.0"
 AUTHOR = "Richard Bejtlich"
 LICENSE = "MIT"
 URL = "https://github.com/taosecurity/sf-papyrus-ref"
@@ -61,6 +66,7 @@ def _load(name):
 
 pexread = _load("pexread")
 pscread = _load("pscread")
+htmlsite = _load("htmlsite")
 
 
 class DataError(Exception):
@@ -525,6 +531,155 @@ def cmd_diff(ref, a):
     return 0
 
 
+# ------------------------------------------------------------------ html and compare (read the sources themselves)
+
+SITE_MARK = ".sf-papyrus-ref-site"
+SCRIPTNAME_LINE = re.compile(r"(?im)^[ \t]*scriptname[ \t]+((?:[A-Za-z_][A-Za-z0-9_]*:)*[A-Za-z_][A-Za-z0-9_]*)")
+
+
+def default_site():
+    return os.path.join(os.path.dirname(default_cache()), "site")
+
+
+def sources_or_error(given):
+    """(path, None) or (None, exit code) after printing the reason."""
+    path = given
+    if not path:
+        path, tried = find_sources()
+        if not path:
+            print("Error: no Creation Kit script sources found. Looked in:\n  " + "\n  ".join(tried)
+                  + "\nInstall the Creation Kit from Steam, or pass --sources <folder or ContentResources.zip>.",
+                  file=sys.stderr)
+            return None, 2
+    if not os.path.exists(path):
+        print(f"Error: {path} does not exist. Pass --sources <folder or ContentResources.zip>.", file=sys.stderr)
+        return None, 2
+    return path, None
+
+
+def cmd_html(ref, a):
+    path, code = sources_or_error(a.sources)
+    if not path:
+        return code
+    out = os.path.abspath(a.out)
+    if os.path.isdir(out) and os.listdir(out) and not os.path.isfile(os.path.join(out, SITE_MARK)):
+        print(f"Error: {out} already holds files that this command did not write. Pass --out <an empty or new "
+              "folder>, so nothing of yours is overwritten.", file=sys.stderr)
+        return 2
+    official = {(e["script"].lower(), e["name"].lower()): e for e in ref.entries}
+    stamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
+    log.info("Reading script sources from %s (fragments %s)", path, "included" if a.include_fragments else "left out")
+    try:
+        os.makedirs(out, exist_ok=True)
+        counts = htmlsite.build(pscread, iter_sources(path, a.include_fragments), path, out, official, stamp, log,
+                                os.path.join(HERE, "site-assets"))
+    except (OSError, zipfile.BadZipFile) as e:
+        print(f"Error: could not build the site ({e}). Check that {path} is readable and that you can write to "
+              f"{out}, or pass --out <another folder>.", file=sys.stderr)
+        return 2
+    if not counts:
+        print(f"Error: no .psc scripts in {path}. Pass the folder that holds Debug.psc, or ContentResources.zip.",
+              file=sys.stderr)
+        return 2
+    index = os.path.join(out, "index.html")
+    if a.json:
+        out_json({**meta(ref), "sources": os.path.abspath(path), "out": out, "index": index, **counts})
+    else:
+        print(f"Read {counts['scripts']} scripts ({counts['members']} functions, events and structs) from {path}.")
+        print(f"Linked {counts['calls']} calls to the function they reach.")
+        print(f"Wrote {counts['pages']} pages to {out}. Open {index} in your browser.")
+        print("These pages hold Bethesda's script text from your own install: keep them on your PC or home network, "
+              "and never publish them.")
+    return 0
+
+
+def normalized(text):
+    lines = [x.rstrip() for x in text.replace("\r\n", "\n").replace("\r", "\n").split("\n")]
+    while lines and not lines[-1]:
+        lines.pop()
+    return lines
+
+
+def iter_given(paths, errors):
+    """(shown path, text) for every .psc under the given files, folders and zips."""
+    for p in paths:
+        if not os.path.exists(p):
+            errors.append(f"{p}: not found")
+        elif os.path.isfile(p) and not p.lower().endswith(".zip"):
+            try:
+                with open(p, encoding="utf-8", errors="replace") as f:
+                    yield p, f.read()
+            except OSError as e:
+                errors.append(f"{p}: could not be read ({e.strerror or e})")
+        else:
+            try:
+                for rel, text in iter_sources(p, include_fragments=True):
+                    yield os.path.join(p, rel), text
+            except (OSError, zipfile.BadZipFile) as e:
+                errors.append(f"{p}: could not be read ({e})")
+
+
+def cmd_compare(ref, a):
+    path, code = sources_or_error(a.sources)
+    if not path:
+        return code
+    by_name, by_file = {}, {}
+    try:
+        for rel, text in iter_sources(path, include_fragments=True):
+            m = SCRIPTNAME_LINE.search(text)
+            entry = (rel.replace("\\", "/"), text)
+            if m:
+                by_name.setdefault(m.group(1).lower(), entry)
+            by_file.setdefault(os.path.basename(rel).lower(), entry)
+    except (OSError, zipfile.BadZipFile) as e:
+        print(f"Error: could not read the sources {path} ({e}).", file=sys.stderr)
+        return 2
+    log.info("Read %d Creation Kit scripts from %s", len(by_name), path)
+    errors, results = [], []
+    for shown, text in iter_given(a.paths, errors):
+        m = SCRIPTNAME_LINE.search(text)
+        name = m.group(1) if m else ""
+        ck = by_name.get(name.lower()) if name else None
+        ck = ck or by_file.get(os.path.basename(shown).lower())
+        r = {"file": shown, "script": name, "ck_file": ck[0] if ck else ""}
+        if not ck:
+            r["status"] = "not-in-ck"
+        else:
+            mine, theirs = normalized(text), normalized(ck[1])
+            if mine == theirs:
+                r["status"] = "identical"
+            else:
+                diff = list(difflib.unified_diff(theirs, mine, lineterm="", n=0))
+                r["status"] = "changed"
+                r["lines_added"] = sum(1 for x in diff if x.startswith("+") and not x.startswith("+++"))
+                r["lines_removed"] = sum(1 for x in diff if x.startswith("-") and not x.startswith("---"))
+        log.debug("%s: %s (%s)", shown, r["status"], r["ck_file"] or "no match")
+        results.append(r)
+    counts = {k: sum(r["status"] == k for r in results) for k in ("identical", "changed", "not-in-ck")}
+    if a.json:
+        out_json({**meta(ref), "sources": os.path.abspath(path), "files": len(results), "counts": counts,
+                  "results": results, "errors": errors})
+    else:
+        for r in results:
+            if r["status"] == "changed":
+                print(f"changed    {r['file']}  (+{r['lines_added']} -{r['lines_removed']} lines against {r['ck_file']})")
+            elif r["status"] == "not-in-ck":
+                print(f"not in CK  {r['file']}" + (f"  (Scriptname {r['script']})" if r["script"] else ""))
+            elif a.all:
+                print(f"identical  {r['file']}")
+        for e in errors:
+            print(f"Error: {e}", file=sys.stderr)
+        if results:
+            print(f"Compared {len(results)} scripts with {path}: {counts['identical']} identical, "
+                  f"{counts['changed']} changed, {counts['not-in-ck']} not from the Creation Kit"
+                  + (f"; {len(errors)} paths could not be read" if errors else "") + ".")
+    if errors or not results:
+        if not results and not errors:
+            print("Error: no .psc files in the given paths.", file=sys.stderr)
+        return 2
+    return 0 if counts["identical"] == len(results) else 1
+
+
 # ------------------------------------------------------------------ check
 
 RULES = {
@@ -951,6 +1106,16 @@ def parser():
     p.add_argument("--include-fragments", action="store_true", help="also read Fragments scripts")
     p = sub.add_parser("diff", parents=[common], help="compare the official list with your local sources")
     p.add_argument("--all", action="store_true", help="print every name, not the first 40 of each list")
+    p = sub.add_parser("html", parents=[common],
+                       help="build a browsable offline website from your own Creation Kit script sources")
+    p.add_argument("--sources", help="a folder of .psc files or the CK's ContentResources.zip (default: found)")
+    p.add_argument("--out", default=default_site(), help="the folder to write the site to (default: %(default)s)")
+    p.add_argument("--include-fragments", action="store_true", help="also add the Fragments scripts")
+    p = sub.add_parser("compare", parents=[common],
+                       help="compare .psc files with your Creation Kit sources: identical, changed or not from the CK")
+    p.add_argument("paths", nargs="+", help=".psc files, folders or zips")
+    p.add_argument("--sources", help="a folder of .psc files or the CK's ContentResources.zip (default: found)")
+    p.add_argument("--all", action="store_true", help="also list the identical files")
     p = sub.add_parser("check", parents=[common], help="find BetaOnly, DebugOnly and Latent-in-loop calls")
     p.add_argument("paths", nargs="+", help=".psc or .pex files, or folders searched below them")
     p.add_argument("--allow", action="append", metavar="SCRIPT.NAME",
@@ -989,7 +1154,8 @@ def main(argv=None):
         return 2
     a.local = Local(a.cache, use=not a.no_local and a.cmd != "build-local")
     return {"lookup": cmd_lookup, "script": cmd_script, "list": cmd_list, "data": cmd_data,
-            "build-local": cmd_build_local, "diff": cmd_diff, "check": cmd_check, "mcp": cmd_mcp}[a.cmd](ref, a)
+            "build-local": cmd_build_local, "diff": cmd_diff, "html": cmd_html, "compare": cmd_compare,
+            "check": cmd_check, "mcp": cmd_mcp}[a.cmd](ref, a)
 
 
 def run():

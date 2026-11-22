@@ -1,0 +1,99 @@
+/* SPDX-License-Identifier: MIT */
+/* Stylesheet for the site that "sf-papyrus-ref html" builds. */
+:root {
+  --bg: #f6f5f1; --panel: #ffffff; --line: #dcd8cf; --text: #1d232b; --dim: #5d6672; --link: #1557b0;
+  --accent: #a8620a; --code: #fbfaf7; --k: #a83c0c; --s: #357214; --c: #7a8794; --d: #6c5a9e; --n: #8c6400;
+  --t: #0b6a8c; --hl: #fff0b8; --chip: #ece8df;
+  --menu-bg: #1b2028; --menu-text: #c9d1db; --menu-on: #ffffff; --menu-edge: hsl(32 30% 32%);
+  --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --mono: ui-monospace, Consolas, monospace;
+}
+:root[data-theme="dark"] {
+  --bg: #0f1217; --panel: #161b22; --line: #2b3440; --text: #d8dee6; --dim: #8e99a7; --link: #7fb6ff;
+  --accent: #e6a23c; --code: #0c0f14; --k: #ff9e64; --s: #9ece6a; --c: #6f7f91; --d: #b4a0e8; --n: #e0af68;
+  --t: #7dcfff; --hl: #3a3420; --chip: #232b36;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1217; --panel: #161b22; --line: #2b3440; --text: #d8dee6; --dim: #8e99a7; --link: #7fb6ff;
+    --accent: #e6a23c; --code: #0c0f14; --k: #ff9e64; --s: #9ece6a; --c: #6f7f91; --d: #b4a0e8; --n: #e0af68;
+    --t: #7dcfff; --hl: #3a3420; --chip: #232b36;
+  }
+}
+* { box-sizing: border-box; }
+html { scroll-padding-top: 64px; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.55 var(--sans); }
+a { color: var(--link); text-decoration: none; }
+a:hover { text-decoration: underline; }
+code, pre { font-family: var(--mono); font-size: 0.9em; }
+header { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 14px; padding: 10px 18px;
+  background: var(--panel); border-bottom: 1px solid var(--line); }
+.brand { font-weight: 700; color: var(--accent); white-space: nowrap; }
+.links a { margin-right: 12px; }
+.search { position: relative; flex: 1; min-width: 160px; }
+#q { width: 100%; padding: 7px 10px; border: 1px solid var(--line); border-radius: 7px; background: var(--bg);
+  color: var(--text); font: 14px var(--sans); }
+#q:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+#sugg { position: absolute; left: 0; right: 0; top: 40px; display: none; max-height: 70vh; overflow: auto;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 10px 28px rgba(0,0,0,.3); }
+#sugg a { display: flex; gap: 10px; align-items: baseline; padding: 6px 10px; color: var(--text);
+  border-bottom: 1px solid var(--line); }
+#sugg a.sel, #sugg a:hover { background: var(--chip); text-decoration: none; }
+#sugg .tag { font: 11px var(--mono); padding: 1px 6px; border-radius: 4px; background: var(--chip); color: var(--dim); }
+#sugg .where { color: var(--dim); font-size: 13px; }
+#sugg .empty { padding: 8px 10px; color: var(--dim); }
+#theme { padding: 6px 10px; border: 1px solid var(--line); border-radius: 7px; background: var(--chip);
+  color: var(--text); cursor: pointer; font: 13px var(--sans); }
+.menu { position: fixed; top: 57px; bottom: 0; left: 0; width: 220px; overflow: auto; padding: 12px 0;
+  background: var(--menu-bg); }
+.menu a { display: block; padding: 6px 16px; color: var(--menu-text); font-size: 14px; }
+.menu a.on { color: var(--menu-on); box-shadow: inset 4px 0 0 var(--menu-edge); background: rgba(255,255,255,.06); }
+.menu a:hover { text-decoration: none; color: var(--menu-on); }
+main { margin-left: 220px; padding: 18px 28px 40px; }
+h1 { margin: 6px 0 6px; font-size: 26px; overflow-wrap: anywhere; }
+h2 { margin: 28px 0 10px; font-size: 19px; border-bottom: 1px solid var(--line); padding-bottom: 4px; }
+.lede { font-size: 16px; }
+.note { padding: 10px 14px; border-left: 4px solid var(--accent); background: var(--panel); border-radius: 4px; }
+.sub, .chain, .kids { color: var(--dim); overflow-wrap: anywhere; }
+table { width: 100%; border-collapse: collapse; background: var(--panel); border: 1px solid var(--line); }
+th, td { text-align: left; vertical-align: top; padding: 6px 10px; border-bottom: 1px solid var(--line); }
+th { background: var(--chip); font-size: 13px; }
+td code { overflow-wrap: anywhere; }
+td.kind { color: var(--dim); white-space: nowrap; }
+td.where { white-space: nowrap; font-size: 13px; }
+tr:target { background: var(--hl); }
+.b { display: inline-block; margin-left: 6px; padding: 0 6px; border-radius: 4px; font: 11px var(--mono);
+  background: var(--chip); color: var(--dim); }
+.b-latent, .b-debugonly, .b-betaonly { color: var(--k); }
+.b-nondelayed, .b-invsafe { color: var(--s); }
+.wiki { margin-left: 8px; font-size: 13px; }
+details { margin: 6px 0; }
+summary { cursor: pointer; color: var(--dim); }
+.cols { columns: 18rem auto; column-gap: 24px; margin: 6px 0; }
+ul.cols { padding-left: 18px; }
+p.cols a { display: inline-block; margin-right: 10px; }
+.tree, .tree ul { list-style: none; padding-left: 18px; margin: 2px 0; }
+.tree summary { color: var(--text); }
+.count { font: 11px var(--mono); color: var(--dim); background: var(--chip); padding: 0 5px; border-radius: 4px; }
+pre.src { background: var(--code); border: 1px solid var(--line); border-radius: 6px; padding: 10px 0; overflow-x: auto;
+  line-height: 1.45; tab-size: 4; }
+pre.src .ln { display: inline-block; width: 4.5em; padding-right: 12px; text-align: right; color: var(--c);
+  user-select: none; }
+pre.src .ln a { color: inherit; }
+pre.src .ln:target { background: var(--hl); color: var(--text); }
+.k { color: var(--k); } .s { color: var(--s); } .c { color: var(--c); font-style: italic; } .d { color: var(--d); }
+.n { color: var(--n); } a.t { color: var(--t); }
+.diagram { margin: 10px 0; }
+.diagram svg { width: 100%; height: auto; max-height: 200px; }
+.diagram .box rect { fill: var(--panel); stroke: var(--accent); stroke-width: 2; }
+.diagram .box text { fill: var(--text); font: 15px var(--sans); text-anchor: middle; }
+.diagram .arrow { stroke: var(--accent); stroke-width: 3; fill: none; }
+.diagram figcaption { color: var(--dim); font-size: 14px; }
+footer { margin-top: 40px; color: var(--dim); font-size: 13px; border-top: 1px solid var(--line); }
+@media (max-width: 800px) {
+  header { flex-wrap: wrap; padding: 8px 12px; }
+  .links { order: 3; }
+  .menu { display: none; }
+  main { margin-left: 0; padding: 12px 16px 30px; }
+  html { scroll-padding-top: 110px; }
+}

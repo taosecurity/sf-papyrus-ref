@@ -1,5 +1,33 @@
 # Changelog
 
+## 0.2.0 (2026-11-21)
+
+### What's new
+
+- **`html` builds a website of your Creation Kit's scripts.** It reads the script sources from your own Creation Kit and writes pages you open in your browser, offline. They include search, one page per script, the inheritance tree, every place a function is called from, and the highlighted source.
+- **`compare` tells you which scripts came from the Creation Kit.** It checks `.psc` files against your Creation Kit's sources and reports each one as identical, changed (with lines added and removed) or not from the Creation Kit. Use it to see which of Bethesda's scripts a mod changes.
+
+### Example
+
+    > sf-papyrus-ref html
+    sf-papyrus-ref 0.2.0 by Richard Bejtlich - MIT - https://github.com/taosecurity/sf-papyrus-ref
+    Read 1702 scripts (8381 functions, events and structs) from C:\Program Files (x86)\Steam\steamapps\common\Starfield\Tools\ContentResources.zip.
+    Linked 30068 calls to the function they reach.
+    Wrote 1705 pages to C:\Users\<you>\AppData\Local\sf-papyrus-ref\site. Open C:\Users\<you>\AppData\Local\sf-papyrus-ref\site\index.html in your browser.
+    These pages hold Bethesda's script text from your own install: keep them on your PC or home network, and never publish them.
+
+    > sf-papyrus-ref compare MyMod\Scripts\Source --all
+    sf-papyrus-ref 0.2.0 by Richard Bejtlich - MIT - https://github.com/taosecurity/sf-papyrus-ref
+    identical  MyMod\Scripts\Source\Debug.psc
+    not in CK  MyMod\Scripts\Source\MyQuestScript.psc  (Scriptname MyQuestScript)
+    changed    MyMod\Scripts\Source\Utility.psc  (+4 -0 lines against Scripts/Source/Utility.psc)
+    Compared 3 scripts with C:\Program Files (x86)\Steam\steamapps\common\Starfield\Tools\ContentResources.zip: 1 identical, 1 changed, 1 not from the Creation Kit.
+
+### Notes
+
+- The release still ships no script sources. The website exists only on the PC that runs `html`, made from that PC's own Creation Kit. Keep it there, or on your home network.
+- The pages work offline and under a strict Content-Security-Policy, because they have no inline scripts.
+
 ## 0.1.0 (2026-11-20)
 
 ### What's new

@@ -1,6 +1,6 @@
 # AGENTS.md: sf-papyrus-ref for AI assistants
 
-These are plain steps for an AI assistant helping someone use sf-papyrus-ref. Every command here was run once on sf-papyrus-ref 0.1.0 before release. The [README](README.md) has the full description.
+These are plain steps for an AI assistant helping someone use sf-papyrus-ref. Every command here was run once on sf-papyrus-ref 0.2.0 before release. The [README](README.md) has the full description.
 
 ## 1. What it is for
 
@@ -18,11 +18,11 @@ sf-papyrus-ref is an offline reference for Starfield's Papyrus scripting languag
 
 ## 3. Install
 
-Download `sf-papyrus-ref-0.1.0.zip` and `sf-papyrus-ref-0.1.0.zip.sha256` from https://github.com/taosecurity/sf-papyrus-ref/releases, then check the zip:
+Download `sf-papyrus-ref-0.2.0.zip` and `sf-papyrus-ref-0.2.0.zip.sha256` from https://github.com/taosecurity/sf-papyrus-ref/releases, then check the zip:
 
-    certutil -hashfile sf-papyrus-ref-0.1.0.zip SHA256
+    certutil -hashfile sf-papyrus-ref-0.2.0.zip SHA256
 
-On Linux, run `sha256sum -c sf-papyrus-ref-0.1.0.zip.sha256` instead. Unzip it anywhere and keep its files together; `sf_papyrus_ref.py` loads `pexread.py`, `pscread.py` and `data/` from its own folder.
+On Linux, run `sha256sum -c sf-papyrus-ref-0.2.0.zip.sha256` instead. Unzip it anywhere and keep its files together; `sf_papyrus_ref.py` loads `pexread.py`, `pscread.py` and `data/` from its own folder.
 
 ## 4. Prove the install works
 
@@ -66,6 +66,18 @@ It prints `Debug.Notification  (function)`, then `Flags: DebugOnly`, and exits w
 
       python -I sf_papyrus_ref.py diff
 
+- Build a browsable website of the user's Creation Kit scripts (about ten seconds; add `--include-fragments` for all of them):
+
+      python -I sf_papyrus_ref.py html --out "<empty or new folder>"
+
+  It prints the path of `index.html` to open. It refuses a folder that holds files it didn't write. The pages hold Bethesda's script text: tell the user to keep them on their PC or home network, and never upload, commit or publish them yourself.
+
+- Find which of a mod's `.psc` files are Bethesda's scripts, changed or not:
+
+      python -I sf_papyrus_ref.py compare "<mod folder>" --json
+
+  Each result has `status` (`identical`, `changed` or `not-in-ck`), `ck_file`, and for changed files `lines_added` and `lines_removed`. It exits with 0 when everything is identical, and with 1 otherwise.
+
 ## 6. MCP server for Claude Code
 
 Register it once (use the real path of the unzipped folder):
@@ -89,13 +101,16 @@ Each returns the same JSON as the matching command with `--json`, plus `exit_cod
   - `lookup` and `script`: 0 found, 1 not found.
   - `list`: 0 some, 1 none.
   - `check`: 0 clean, 1 findings.
+  - `compare`: 0 all identical, 1 some changed or not from the Creation Kit.
+  - `html`, `build-local`, `diff` and `data`: 0 done.
   - Every command: 2 for bad options, unreadable files or no sources.
 - **Logs:** `--verbose` prints what was read and decided to stderr, and `--log <file>` writes the same to a file.
 - **Cache:** `build-local` writes `%LOCALAPPDATA%\sf-papyrus-ref\local.json` on Windows, or `~/.cache/sf-papyrus-ref/local.json` on Linux. `--cache` changes the path and `--no-local` ignores the cache.
 
 ## 8. Limits
 
-- It never changes the user's scripts, plugins or game files. It writes only its cache and the `--log` file.
+- It never changes the user's scripts, plugins or game files. It writes only its cache, the `html` site folder and the `--log` file.
+- **Don't share, upload or commit the `html` site.** It holds Bethesda's script text from the user's own install.
 - It never uploads anything and makes no network connections.
 - **Don't share or commit the local cache.** It is made from Bethesda's script sources.
 - The shipped list holds names, flags and wiki links only. Without `build-local` there are no signatures, and inherited calls are matched by name. Findings marked `name only` are less certain.

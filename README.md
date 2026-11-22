@@ -16,7 +16,7 @@ Look up a function. This run is on a fresh install, before `build-local`, so it 
 
 ```
 > sf-papyrus-ref lookup Debug.Notification
-sf-papyrus-ref 0.1.0 by Richard Bejtlich - MIT - https://github.com/taosecurity/sf-papyrus-ref
+sf-papyrus-ref 0.2.0 by Richard Bejtlich - MIT - https://github.com/taosecurity/sf-papyrus-ref
 Debug.Notification  (function)
   Flags: DebugOnly
   Official page: https://starfield.creationkit.bethesda.net/w/index.php?title=Notification_-_Debug
@@ -27,7 +27,7 @@ Check a script. The release zip holds a small made-up test script in `tests\fixt
 
 ```
 > sf-papyrus-ref check tests\fixtures\SfprFixture.psc --allow Debug.Trace
-sf-papyrus-ref 0.1.0 by Richard Bejtlich - MIT - https://github.com/taosecurity/sf-papyrus-ref
+sf-papyrus-ref 0.2.0 by Richard Bejtlich - MIT - https://github.com/taosecurity/sf-papyrus-ref
 tests\fixtures\SfprFixture.psc:8: warning: Debug.Notification is DebugOnly: it does nothing in release builds on Xbox and PlayStation
 tests\fixtures\SfprFixture.psc:11: warning: Utility.Wait is Latent and is called inside a loop: each pass waits for it to finish
 tests\fixtures\SfprFixture.psc:15: error: Game.Warning is BetaOnly: it is meant for beta builds and should never ship
@@ -44,6 +44,8 @@ Checked 1 files: 1 errors, 3 warnings.
   - **BetaOnly** calls, as errors. They are meant for Bethesda's beta builds and should never ship.
   - **DebugOnly** calls, as warnings, or as errors with `--creations`. These calls do nothing in release builds on Xbox and PlayStation, so a `Debug.Notification` or `Debug.MessageBox` that the player should see is invisible on a console.
   - **Latent** calls inside a `While` loop, as warnings. The script waits for each one to finish on every pass.
+- **It turns your Creation Kit's scripts into a website.** `html` builds a set of pages you open in your browser: search, one page per script with its functions and events, the inheritance tree, every place a function is called from, and the highlighted source. It is made from your own Creation Kit on your own PC and stays there.
+- **It tells you which scripts came from the Creation Kit.** `compare` checks a folder of `.psc` files against your Creation Kit's sources: identical, changed (and by how many lines), or not from the Creation Kit at all. Use it on a mod you downloaded to see which of Bethesda's scripts it changes.
 - **It helps AI agents.** `mcp` runs a small read-only server that Claude Code and other agents can query, so they look a name up instead of inventing one.
 
 The five flags come from the official wiki: Latent, Non-delayed, DebugOnly, BetaOnly and Inventory-safe. The wiki's [Latent Functions](https://starfield.creationkit.bethesda.net/w/index.php?title=Category:Latent_Functions) and [Non-Delayed Native Functions](https://starfield.creationkit.bethesda.net/w/index.php?title=Category:Non-Delayed_Native_Functions) pages explain the two timing flags.
@@ -53,8 +55,8 @@ The five flags come from the official wiki: Latent, Non-delayed, DebugOnly, Beta
 sf-papyrus-ref needs Python 3.9 or newer, on Windows or Linux. There's nothing else to install, because it uses Python's standard library only.
 
 1. Install Python 3.11 or newer from [python.org](https://www.python.org/downloads/). On the first screen of the installer, tick **Add python.exe to PATH**. To check that it worked, open a new Command Prompt and type `python --version`. It should print a version number.
-2. Download `sf-papyrus-ref-0.1.0.zip` and its `.sha256` file from the [releases page](https://github.com/taosecurity/sf-papyrus-ref/releases).
-3. Check the zip. On Windows, run `certutil -hashfile sf-papyrus-ref-0.1.0.zip SHA256` and compare the result with the `.sha256` file. On Linux, run `sha256sum -c sf-papyrus-ref-0.1.0.zip.sha256`.
+2. Download `sf-papyrus-ref-0.2.0.zip` and its `.sha256` file from the [releases page](https://github.com/taosecurity/sf-papyrus-ref/releases).
+3. Check the zip. On Windows, run `certutil -hashfile sf-papyrus-ref-0.2.0.zip SHA256` and compare the result with the `.sha256` file. On Linux, run `sha256sum -c sf-papyrus-ref-0.2.0.zip.sha256`.
 4. Unzip it anywhere, for example `C:\Tools\sf-papyrus-ref`. Keep its files together.
 5. Open the unzipped folder in File Explorer, click the address bar at the top, type `cmd` and press Enter. A Command Prompt window opens in that folder, ready for the commands below.
 6. Try it:
@@ -81,7 +83,7 @@ Give it a name, or a script and a name. The Example above shows a name that exis
 
 ```
 > sf-papyrus-ref lookup Notifcation
-sf-papyrus-ref 0.1.0 by Richard Bejtlich - MIT - https://github.com/taosecurity/sf-papyrus-ref
+sf-papyrus-ref 0.2.0 by Richard Bejtlich - MIT - https://github.com/taosecurity/sf-papyrus-ref
 Notifcation: Not in the official list. It may be a script extender (SFSE) function, a function from another mod's script, or a made-up name. The Papyrus compiler is the final judge.
 Did you mean: Notification, OnStoryInfection, GetClassification, IsInFaction, GetLocation
 ```
@@ -92,7 +94,7 @@ Did you mean: Notification, OnStoryInfection, GetClassification, IsInFaction, Ge
 
 ```
 > sf-papyrus-ref script Utility
-sf-papyrus-ref 0.1.0 by Richard Bejtlich - MIT - https://github.com/taosecurity/sf-papyrus-ref
+sf-papyrus-ref 0.2.0 by Richard Bejtlich - MIT - https://github.com/taosecurity/sf-papyrus-ref
 Utility - Functions (25)
   CallGlobalFunction  [Latent, Non-delayed]
   CallGlobalFunctionNoWait  [Non-delayed]
@@ -109,7 +111,7 @@ Utility - Functions (25)
 
 ```
 > sf-papyrus-ref list --flag latent --script Utility
-sf-papyrus-ref 0.1.0 by Richard Bejtlich - MIT - https://github.com/taosecurity/sf-papyrus-ref
+sf-papyrus-ref 0.2.0 by Richard Bejtlich - MIT - https://github.com/taosecurity/sf-papyrus-ref
 Utility.CallGlobalFunction  (function)
 Utility.Wait  (function)
 Utility.WaitGameTime  (function)
@@ -121,7 +123,7 @@ Utility.WaitMenuPause  (function)
 
 ```
 > sf-papyrus-ref data
-sf-papyrus-ref 0.1.0 by Richard Bejtlich - MIT - https://github.com/taosecurity/sf-papyrus-ref
+sf-papyrus-ref 0.2.0 by Richard Bejtlich - MIT - https://github.com/taosecurity/sf-papyrus-ref
 Data file: ...\sf-papyrus-ref\data\official-names.json
 Official wiki revision 8392, list built 2026-11-20.
 103 scripts, 1390 functions, 260 events, 3 structs.
@@ -135,7 +137,7 @@ The shipped list holds names and flags only. Run this once to add signatures and
 
 ```
 > sf-papyrus-ref build-local
-sf-papyrus-ref 0.1.0 by Richard Bejtlich - MIT - https://github.com/taosecurity/sf-papyrus-ref
+sf-papyrus-ref 0.2.0 by Richard Bejtlich - MIT - https://github.com/taosecurity/sf-papyrus-ref
 Read 1702 scripts (8381 functions, events and structs) from C:\Program Files (x86)\Steam\steamapps\common\Starfield\Tools\ContentResources.zip.
 102 of the 103 scripts on the official list are among them.
 Saved the local cache to C:\Users\<you>\AppData\Local\sf-papyrus-ref\local.json (it stays on this machine; never share it).
@@ -170,6 +172,52 @@ Names in your sources but not on the wiki: 497
   ActiveMagicEffect.OnActivate
 ...
 ```
+
+## html: browse your Creation Kit's scripts as a website
+
+`html` reads the script sources from your own Creation Kit and writes a website you open in your browser. It needs no internet and no server.
+
+```
+> sf-papyrus-ref html
+sf-papyrus-ref 0.2.0 by Richard Bejtlich - MIT - https://github.com/taosecurity/sf-papyrus-ref
+Read 1702 scripts (8381 functions, events and structs) from C:\Program Files (x86)\Steam\steamapps\common\Starfield\Tools\ContentResources.zip.
+Linked 30068 calls to the function they reach.
+Wrote 1705 pages to C:\Users\<you>\AppData\Local\sf-papyrus-ref\site. Open C:\Users\<you>\AppData\Local\sf-papyrus-ref\site\index.html in your browser.
+These pages hold Bethesda's script text from your own install: keep them on your PC or home network, and never publish them.
+```
+
+(The user name in the path is replaced with `<you>`.) It takes about ten seconds. The site has:
+
+- **Search** at the top of every page. Type part of a name, or `Script.Name`, and press Enter. Press `/` to jump to the box.
+- **A page for each script:** its parent scripts and the scripts that extend it, its functions, events and structs with their declarations and flags, its properties and states, what it inherits, and the highlighted source with line numbers.
+- **"Called from":** under each function, every place another script calls it, with links to the exact line. A call can be placed when its object's type is clear from the source. Calls through a chain such as `a.b.Name()` can't, so the lists can be short.
+- **An A-Z list** by folder and an **inheritance tree**.
+
+Options:
+
+- `--include-fragments` also adds the quest, scene, topic and terminal fragment scripts. That makes about 5,000 scripts instead of about 1,700.
+- `--out <folder>` writes the site somewhere else. The tool refuses a folder that already holds files it didn't write, so it never overwrites anything of yours. Run it again into the same folder to rebuild it, for example after a Creation Kit update.
+- `--sources <folder or zip>` reads sources from somewhere other than the Steam Creation Kit, as with `build-local`.
+
+The pages hold Bethesda's script text, so **keep them on your PC or your home network and never publish them**. Each page tells search engines not to index it. To serve them on your home network, copy the folder to any web server. The pages work under a strict Content-Security-Policy (`script-src 'self'`), because they have no inline scripts.
+
+## compare: which scripts came from the Creation Kit
+
+`compare` checks `.psc` files (files, folders or zips) against your Creation Kit's sources. It matches each script by its `Scriptname` line, and then by file name. Line endings and trailing spaces don't count as changes.
+
+```
+> sf-papyrus-ref compare MyMod\Scripts\Source --all
+sf-papyrus-ref 0.2.0 by Richard Bejtlich - MIT - https://github.com/taosecurity/sf-papyrus-ref
+identical  MyMod\Scripts\Source\Debug.psc
+not in CK  MyMod\Scripts\Source\MyQuestScript.psc  (Scriptname MyQuestScript)
+changed    MyMod\Scripts\Source\Utility.psc  (+4 -0 lines against Scripts/Source/Utility.psc)
+Compared 3 scripts with C:\Program Files (x86)\Steam\steamapps\common\Starfield\Tools\ContentResources.zip: 1 identical, 1 changed, 1 not from the Creation Kit.
+```
+
+- Without `--all`, identical files are left out of the list. They are still counted.
+- A **changed** script is a copy of one of Bethesda's scripts with edits. When two mods change the same script, they conflict: only one compiled copy can be in the game's folder, and the mod your mod manager installs last wins.
+- `--json` gives every result, with the lines added and removed.
+- It compares against the fragments too, so it always reads all of your Creation Kit's scripts.
 
 ## check: check your scripts
 
@@ -206,6 +254,8 @@ The agent then has four read-only tools: `papyrus_lookup`, `papyrus_script`, `pa
 | `data` | Which wiki revision the shipped list comes from | 0 |
 | `build-local [--sources <path>]` | Builds the local cache from your Creation Kit sources | 0 done |
 | `diff [--all]` | The official list against your sources | 0 done |
+| `html [--out <folder>] [--include-fragments]` | A browsable website of your Creation Kit's scripts | 0 done |
+| `compare <paths> [--all]` | `.psc` files against your Creation Kit's sources | 0 all identical, 1 some changed or not from the CK |
 | `check <paths> [--allow X] [--creations] [--strict]` | BetaOnly, DebugOnly and Latent-in-loop calls | 0 clean, 1 findings |
 | `mcp` | Read-only MCP server on stdin and stdout | 0 when the client closes it |
 
@@ -221,11 +271,12 @@ If something goes wrong, run the same command with `--verbose` to see on screen 
 
 `data/official-names.json` lists, for each official Papyrus function, event and struct: its name, its script, its kind, its flags and a link to its official wiki page. The flags are the official wiki's category pages, and the list was built with `tools/build_names.py` from wiki revision 8392.
 
-The tool ships **no** text from the wiki, **no** signatures and **no** script sources. Signatures appear only after you run `build-local`, and they come from the copy of the Creation Kit on your own machine.
+The tool ships **no** text from the wiki, **no** signatures and **no** script sources. Signatures appear only after you run `build-local`, and the website appears only after you run `html`. Both come from the copy of the Creation Kit on your own machine.
 
 ## Similar tools
 
 - [Papyrus Index](https://papyrus.bellcube.dev/) by BellCube is a searchable site for Papyrus in several games. Its Starfield data is from game version 1.15.216.
+- [Starfield.Script(Reference) HTML App](https://www.nexusmods.com/starfield/mods/18170) on Nexus Mods is a ready-made offline page for browsing Starfield's scripts. `html` builds a similar site from your own Creation Kit instead, so it always matches your version.
 - [papyrus-tools](https://github.com/Kiyozz/papyrus-tools) by Kiyozz is a Papyrus linter, formatter and language server.
 - Bethesda's VS Code extension (in the Creation Kit's `Tools\VSCodePapyrusAddon`) and [Papyrus Language Tools](https://github.com/joelday/papyrus-lang) give completion and hover help while you edit.
 - The [official Creation Kit wiki](https://starfield.creationkit.bethesda.net/) has the full description of every function.
