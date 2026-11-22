@@ -94,7 +94,7 @@ class Html(Base):
         code, _, err = call("html", "--sources", self.src, "--out", self.out)
         self.assertEqual(code, 0, err)
         home = html.unescape(self.page("index.html"))
-        for heading in ("This is what's new on the site.", "A script is a small program that the game runs.",
+        for heading in ("What's new", "A script is a small program that the game runs.",
                         "These are the Starfield scripts that the Creation Kit includes.",
                         "Here is one script, explained line by line.",
                         "The scripts are grouped by the folder they came from."):
@@ -122,12 +122,35 @@ class Html(Base):
         htmlsite = ref_mod.htmlsite
         p = os.path.join(self.tmp.name, "Starfield.exe")
         import struct
+        sig = b"\xbd\x04\xef\xfe"
+        real = "VS_VERSION_INFO".encode("utf-16-le") + b"\0\0" + sig + struct.pack("<III", 0x10000, 0x10010, 0xF40000)
+        stray = sig + struct.pack("<III", 0x12345, 0x50002, 0)  # the signature bytes in data, after the real one
         with open(p, "wb") as f:
-            f.write(b"MZ" + b"\0" * 1000 + b"\xbd\x04\xef\xfe" + struct.pack("<III", 0x10000, 0x10010, 0xF40000)
-                    + b"\0" * 100)
+            f.write(b"MZ" + b"\0" * 1000 + real + b"\0" * 100 + stray + b"\0" * 100)
         self.assertEqual(htmlsite.exe_version(p), "1.16.244.0")
         self.assertEqual(htmlsite.find_versions(os.path.join(self.tmp.name, "Tools", "x.zip"))[0], "1.16.244.0")
         self.assertIsNone(htmlsite.exe_version(os.path.join(self.tmp.name, "missing.exe")))
+        with open(p, "wb") as f:
+            f.write(b"MZ" + stray)  # no version resource at all
+        self.assertIsNone(htmlsite.exe_version(p))
+
+    def test_damaged_manifest_is_ignored(self):
+        os.makedirs(self.out)
+        with open(os.path.join(self.out, ".sf-papyrus-ref-site"), "w") as f:
+            f.write("x")
+        with open(os.path.join(self.out, ".sf-papyrus-ref-manifest.json"), "w") as f:
+            f.write('{"scripts": {"a": "x"}, "builds": [1]}')
+        code, _, err = call("html", "--sources", self.src, "--out", self.out)
+        self.assertEqual(code, 0, err)
+        self.assertIn("built for the first time", self.page("index.html"))
+
+    def test_fragments_wording_follows_the_build(self):
+        call("html", "--sources", self.src, "--out", self.out)
+        self.assertIn("This build leaves the fragments out.", self.page("index.html"))
+        call("html", "--sources", self.src, "--out", self.out, "--include-fragments")
+        home = self.page("index.html")
+        self.assertIn("Many scripts on this site are fragments.", home)
+        self.assertIn("This build includes the fragment scripts, which the last one left out.", home)
 
     def test_source_text_is_escaped_and_no_inline_scripts(self):
         call("html", "--sources", self.src, "--out", self.out)
