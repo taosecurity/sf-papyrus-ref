@@ -178,6 +178,22 @@ class Html(Base):
         self.assertIn('href="s/DefaultSetGlobalOnTriggerEnter.html#L5"', home)  # found past the block comment
         self.assertIsNotNone(htmlsite)
 
+    def test_warning_links_and_how_made(self):
+        call("html", "--sources", self.src, "--out", self.out)
+        home = html.unescape(self.page("index.html"))
+        script = html.unescape(self.page("s/Child.html"))
+        version = ref_mod.VERSION
+        for page in (home, script):
+            self.assertIn("contain Bethesda's proprietary content. They are for the owner's personal use only.", page)
+            self.assertIn(f'<a href="https://github.com/taosecurity/sf-papyrus-ref" rel="noreferrer">sf-papyrus-ref</a> '
+                          f"{version}, a free, open-source tool", page)
+        self.assertIn("This is how the site is made.", home)
+        self.assertIn("sf-papyrus-ref does not exist to share Bethesda's proprietary intellectual property.", home)
+        self.assertIn("by running <code>sf-papyrus-ref html</code>", home)
+        self.assertNotIn("--include-fragments</code> with", home)
+        call("html", "--sources", self.src, "--out", self.out, "--include-fragments")
+        self.assertIn("<code>sf-papyrus-ref html --include-fragments</code>", html.unescape(self.page("index.html")))
+
     def test_damaged_manifest_is_ignored(self):
         os.makedirs(self.out)
         with open(os.path.join(self.out, ".sf-papyrus-ref-site"), "w") as f:

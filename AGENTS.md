@@ -1,6 +1,6 @@
 # AGENTS.md: sf-papyrus-ref for AI assistants
 
-These are plain steps for an AI assistant helping someone use sf-papyrus-ref. Every command here was run once on sf-papyrus-ref 0.2.1 before release. The [README](README.md) has the full description.
+These are plain steps for an AI assistant helping someone use sf-papyrus-ref. Every command here was run once on sf-papyrus-ref 0.2.2 before release. The [README](README.md) has the full description.
 
 ## 1. What it is for
 
@@ -18,11 +18,11 @@ sf-papyrus-ref is an offline reference for Starfield's Papyrus scripting languag
 
 ## 3. Install
 
-Download `sf-papyrus-ref-0.2.1.zip` and `sf-papyrus-ref-0.2.1.zip.sha256` from https://github.com/taosecurity/sf-papyrus-ref/releases, then check the zip:
+Download `sf-papyrus-ref-0.2.2.zip` and `sf-papyrus-ref-0.2.2.zip.sha256` from https://github.com/taosecurity/sf-papyrus-ref/releases, then check the zip:
 
-    certutil -hashfile sf-papyrus-ref-0.2.1.zip SHA256
+    certutil -hashfile sf-papyrus-ref-0.2.2.zip SHA256
 
-On Linux, run `sha256sum -c sf-papyrus-ref-0.2.1.zip.sha256` instead. Unzip it anywhere and keep its files together; `sf_papyrus_ref.py` loads `pexread.py`, `pscread.py`, `htmlsite.py`, `data/` and `site-assets/` from its own folder.
+On Linux, run `sha256sum -c sf-papyrus-ref-0.2.2.zip.sha256` instead. Unzip it anywhere and keep its files together; `sf_papyrus_ref.py` loads `pexread.py`, `pscread.py`, `htmlsite.py`, `data/` and `site-assets/` from its own folder.
 
 ## 4. Prove the install works
 
@@ -110,7 +110,7 @@ Each returns the same JSON as the matching command with `--json`, plus `exit_cod
 ## 8. Limits
 
 - It never changes the user's scripts, plugins or game files. It writes only its cache, the `html` site folder and the `--log` file.
-- **Don't share, upload or commit the `html` site.** It holds Bethesda's script text from the user's own install.
+- **Don't share, upload or commit the `html` site.** It holds Bethesda's script text from the user's own install. sf-papyrus-ref does not exist to share Bethesda's proprietary intellectual property: the site is for the game owner's personal, educational use only, and it must not be published, distributed or shared with others. Never put it in a repository, a release, a web page that others can reach or a message.
 - It never uploads anything and makes no network connections.
 - **Don't share or commit the local cache.** It is made from Bethesda's script sources.
 - The shipped list holds names, flags and wiki links only. Without `build-local` there are no signatures, and inherited calls are matched by name. Findings marked `name only` are less certain.

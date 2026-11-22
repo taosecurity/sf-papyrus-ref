@@ -42,6 +42,17 @@ MAX_CALLERS = 300  # per function, on its page (the count is always exact)
 NOTE = ("These pages were built from your own Creation Kit's script sources. They hold Bethesda's script text, so "
         "keep them on your PC or your home network, and never publish or share them.")
 MANIFEST = ".sf-papyrus-ref-manifest.json"
+REPO = "https://github.com/taosecurity/sf-papyrus-ref"
+# Filled in by build() from the command line tool: version, the command that ran, and its options.
+TOOL = {"version": "", "command": "sf-papyrus-ref html"}
+WARNING = ("These pages are built from the owner's own Starfield game files and contain Bethesda's proprietary "
+           "content. They are for the owner's personal use only. Do not share, publish or distribute them.")
+IP_WARNING = [
+    "sf-papyrus-ref does not exist to share Bethesda's proprietary intellectual property.",
+    "This site is intended solely for the use of the person who owns the game and built it from their own "
+    "Creation Kit. It is a representation of game content for personal, educational purposes.",
+    "It must not be published, distributed or shared with others.",
+]
 
 
 def esc(s):
@@ -256,11 +267,12 @@ def frame(title, root, body, menu, stamp):
   <nav class="links"><a href="{root}index.html">Home</a><a href="{root}az.html">A-Z</a><a href="{root}tree.html">Tree</a></nav>
   <div class="search"><input id="q" type="search" placeholder="Search scripts, functions, events, properties" autocomplete="off" aria-label="Search"><div id="sugg" role="listbox"></div></div>
   <button id="theme" type="button" title="Switch between light and dark">Theme</button>
+  <p class="warnbar">{esc(WARNING)}</p>
 </header>
 <aside class="menu"><a href="#top" class="on">Top</a>{nav}</aside>
 <main>
 {body}
-<footer><p>{esc(NOTE)}</p><p>This site was built on {esc(stamp)} by sf-papyrus-ref (MIT, https://github.com/taosecurity/sf-papyrus-ref).</p></footer>
+<footer><p>{esc(NOTE)}</p><p>This site was built on {esc(stamp)} by <a href="{REPO}" rel="noreferrer">sf-papyrus-ref</a>{(" " + esc(TOOL["version"])) if TOOL["version"] else ""}, a free, open-source tool (MIT license).</p></footer>
 </main>
 </body>
 </html>
@@ -498,6 +510,8 @@ FRAGMENT_TEXT = {
 
 # The site's own changes, newest first (dates are release dates of sf-papyrus-ref).
 NEWS = [
+    ("2026-11-22", "sf-papyrus-ref 0.2.2 added a personal-use warning to every page, links to the tool, and a "
+                   "section that explains how this site was made."),
     ("2026-11-21", "sf-papyrus-ref 0.2.1 added this What's new list, the game and Creation Kit versions, an "
                    "explanation of what a script is and how the game uses it, a line-by-line walkthrough of one "
                    "script and a description of each folder."),
@@ -672,6 +686,59 @@ def whats_new(builds, scripts):
     return '<section id="news"><h2>What\'s new</h2><ul class="news">' + lis + "</ul></section>"
 
 
+def how_section(scripts, n_members, n_calls, sources, stamp, game, ck):
+    """How running sf-papyrus-ref against the Creation Kit's sources made these pages, and what the tool is."""
+    ver = f" {esc(TOOL['version'])}" if TOOL["version"] else ""
+    versions = ""
+    if ck or game:
+        versions = (" The Creation Kit is version " + esc(ck or "unknown") + ", and the game is version "
+                    + esc(game or "unknown") + ".")
+    warn = "".join(f"<p>{esc(x)}</p>" for x in IP_WARNING)
+    steps = [
+        "It read each script's declarations: its Scriptname line and parent script, and its functions, events, "
+        "structs, properties and states.",
+        f"It worked out which function each call reaches by following variable types and parent scripts. This "
+        f"build linked {n_calls} calls.",
+        "It added the official flags and wiki links from the name list that ships with the tool.",
+        "It wrote one page per script, the A-Z list, the inheritance tree and the search index.",
+        "It compared the scripts with the last build to fill in What's new.",
+    ]
+    commands = [
+        ("lookup", "tells you whether a function or event exists, which script it is on and what its flags are."),
+        ("script", "lists every function and event on one script."),
+        ("list", "lists every function with a flag, such as Latent or DebugOnly."),
+        ("check", "checks your mod's .psc or .pex scripts for calls that do nothing on consoles or should never ship."),
+        ("compare", "tells you which of a mod's .psc files are Bethesda's scripts, changed or not."),
+        ("build-local", "reads signatures from your own Creation Kit into a local cache."),
+        ("diff", "compares the official name list with your Creation Kit's sources."),
+        ("mcp", "lets AI assistants such as Claude Code look names up instead of guessing."),
+    ]
+    return (
+        '<section id="how"><h2>This is how the site is made.</h2>'
+        f'<div class="note warn">{warn}</div>'
+        f"<p>This copy was made on {esc(stamp)} by running <code>{esc(TOOL['command'])}</code> with "
+        f'<a href="{REPO}" rel="noreferrer">sf-papyrus-ref</a>{ver}. It read {len(scripts)} script source files '
+        f"from <code>{esc(sources)}</code>.{versions}</p>"
+        + DIAGRAM +
+        "<p>The tool worked through the sources in five steps:</p><ol>"
+        + "".join(f"<li>{esc(s)}</li>" for s in steps) + "</ol>"
+        f"<p>Together, the scripts declare {n_members} functions, events and structs. Nothing was sent anywhere: "
+        "the tool runs offline, and the release itself contains no game code.</p>"
+        '<h3>About sf-papyrus-ref</h3>'
+        f'<p><a href="{REPO}" rel="noreferrer">sf-papyrus-ref</a> is a free, open-source tool (MIT license) for '
+        "Starfield modders. It runs offline on Windows or Linux with Python's standard library. Besides "
+        "<code>html</code>, which made this site, it has these commands:</p><ul>"
+        + "".join(f"<li><code>{esc(c)}</code> {esc(d)}</li>" for c, d in commands) + "</ul>"
+        '<h3>How to make your own copy</h3><ol>'
+        f'<li>Install Python 3.9 or newer, and download sf-papyrus-ref from its '
+        f'<a href="{REPO}/releases" rel="noreferrer">releases page</a>.</li>'
+        "<li>Install the Starfield Creation Kit from Steam, which brings the script sources.</li>"
+        "<li>Run <code>sf-papyrus-ref html</code>, or <code>sf-papyrus-ref html --include-fragments</code> to add "
+        "the thousands of fragment scripts.</li>"
+        "<li>Run the same command again after a Creation Kit update, and What's new lists what changed.</li></ol>"
+        "</section>")
+
+
 def home_page(scripts, children, folders, n_members, n_calls, sources, stamp, game=None, ck=None, builds=(),
               fragments=False, asked_fragments=False):
     roots = sorted((s for s in scripts.values() if not s["extends"] or s["extends"].lower() not in scripts),
@@ -693,7 +760,9 @@ def home_page(scripts, children, folders, n_members, n_calls, sources, stamp, ga
         f"{n_members} functions, events and structs.{versions} It links {n_calls} calls to the function they "
         "reach. Type in the box at the top to find a script, function, event or property, or browse the A-Z list "
         "and the inheritance tree.</p>",
-        f'<p class="note">{esc(NOTE)} They were read from <code>{esc(sources)}</code>.</p>',
+        f'<p class="note">These pages were read from <code>{esc(sources)}</code> and made with '
+        f'<code>{esc(TOOL["command"])}</code>, which anyone can download for free from '
+        f'<a href="{REPO}" rel="noreferrer">GitHub</a> to build this site from their own Creation Kit.</p>',
         whats_new(builds, scripts),
         '<section id="scripts"><h2>A script is a small program that the game runs.</h2>' + intro + SCRIPT_DIAGRAM
         + "</section>",
@@ -710,7 +779,7 @@ def home_page(scripts, children, folders, n_members, n_calls, sources, stamp, ga
                   f'<span class="count">{len(children.get(s["name"].lower(), []))}</span></li>'
                   for s in top) + f"</ul><p>{len(roots)} scripts start a family, because they extend nothing or "
         "extend a script that is not in these sources.</p></section>",
-        '<section id="how"><h2>Your own Creation Kit\'s sources become these pages.</h2>' + DIAGRAM + "</section>",
+        how_section(scripts, n_members, n_calls, sources, stamp, game, ck),
         '<section id="reading"><h2>This is how to read a script page.</h2><p>Each script page lists its functions, '
         "events and structs with their declarations. Flags such as Latent, Non-delayed, DebugOnly and BetaOnly "
         "come from the official Creation Kit wiki list that ships with sf-papyrus-ref, and Native and Global come "
@@ -875,8 +944,10 @@ def write(path, text):
         f.write(text)
 
 
-def build(pscread, sources_iter, sources_label, out, official, stamp, log, assets_dir, asked_fragments=False):
+def build(pscread, sources_iter, sources_label, out, official, stamp, log, assets_dir, asked_fragments=False,
+          tool=None):
     """Write the whole site into out (which must be empty or a site this command built). Returns counts."""
+    TOOL.update(tool or {})
     scripts = collect(pscread, sources_iter, log)
     if not scripts:
         return None

@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.2.2 (2026-11-22)
+
+### What's new
+
+- **Every page carries a personal-use warning.** A small line under the header says that the pages are built from the owner's own Starfield game files, contain Bethesda's proprietary content, and must not be shared, published or distributed.
+- **The site links back to sf-papyrus-ref.** Each page's footer names the tool and its version with a link to this repository, and the front page shows the exact command that built it.
+- **The front page explains how the site was made.** The section "This is how the site is made." opens with the intellectual-property warning. It then gives the command, the sources and versions read, the five steps the tool took, a short description of every command, and how to build your own copy.
+
+### Example
+
+    > sf-papyrus-ref html --include-fragments --out PapyrusSource
+    sf-papyrus-ref 0.2.2 by Richard Bejtlich - MIT - https://github.com/taosecurity/sf-papyrus-ref
+    It read 5033 scripts (24731 functions, events and structs) from C:\Program Files (x86)\Steam\steamapps\common\Starfield\Tools\ContentResources.zip.
+    It linked 87540 calls to the function they reach.
+    It wrote 5036 pages to C:\Users\<you>\Documents\PapyrusSource. Open C:\Users\<you>\Documents\PapyrusSource\index.html in your browser.
+    These pages hold Bethesda's script text from your own install: keep them on your PC or home network, and never publish them.
+
+### Notes
+
+- The example ran from the Documents folder; the user name in the path is replaced with `<you>`.
+- The warning text also appears in the README's `html` section and in AGENTS.md, so people and AI assistants read it before they build.
+
 ## 0.2.1 (2026-11-21)
 
 ### What's new

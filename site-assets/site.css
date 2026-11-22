@@ -21,7 +21,7 @@
   }
 }
 * { box-sizing: border-box; }
-html { scroll-padding-top: 64px; }
+html { scroll-padding-top: 84px; }
 body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.55 var(--sans); }
 a { color: var(--link); text-decoration: none; }
 a:hover { text-decoration: underline; }
@@ -42,9 +42,13 @@ header { position: sticky; top: 0; z-index: 20; display: flex; align-items: cent
 #sugg .tag { font: 11px var(--mono); padding: 1px 6px; border-radius: 4px; background: var(--chip); color: var(--dim); }
 #sugg .where { color: var(--dim); font-size: 13px; }
 #sugg .empty { padding: 8px 10px; color: var(--dim); }
+.warnbar { flex-basis: 100%; margin: 2px 0 0; color: var(--dim); font-size: 12px; line-height: 1.4; }
+header { flex-wrap: wrap; }
+.note.warn { border-left-color: var(--k); }
+.note.warn p { margin: 4px 0; }
 #theme { padding: 6px 10px; border: 1px solid var(--line); border-radius: 7px; background: var(--chip);
   color: var(--text); cursor: pointer; font: 13px var(--sans); }
-.menu { position: fixed; top: 57px; bottom: 0; left: 0; width: 220px; overflow: auto; padding: 12px 0;
+.menu { position: fixed; top: 76px; bottom: 0; left: 0; width: 220px; overflow: auto; padding: 12px 0;
   background: var(--menu-bg); }
 .menu a { display: block; padding: 6px 16px; color: var(--menu-text); font-size: 14px; }
 .menu a.on { color: var(--menu-on); box-shadow: inset 4px 0 0 var(--menu-edge); background: rgba(255,255,255,.06); }
