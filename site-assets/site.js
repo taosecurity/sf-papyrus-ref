@@ -49,29 +49,36 @@
   // Search: the index (assets/search-index.js) loads the first time the box is used.
   var KIND = { s: "script", f: "function", e: "event", t: "struct", p: "property" };
   var loading = false;
-  var failed = false;  // after a failed load, only focusing the box again retries (not every keystroke)
+  var lastTry = 0;  // a failed load is tried again at most every 5 seconds, so typing doesn't pile up requests
 
-  function loadIndex(then, retry) {
+  function showLoadError() {
+    var box = document.getElementById("sugg");
+    if (!box) return;
+    while (box.firstChild) box.removeChild(box.firstChild);
+    var msg = document.createElement("div");
+    msg.className = "empty";
+    msg.textContent = "The search index (assets/search-index.js) could not be loaded. Build the site again.";
+    box.appendChild(msg);
+    box.style.display = "block";
+  }
+
+  function loadIndex(then) {
     if (window.SFPR_INDEX) { then(); return; }
-    if (loading || (failed && !retry)) return;
-    failed = false;
+    if (loading) return;
+    if (lastTry && Date.now() - lastTry < 5000) { showLoadError(); return; }
     loading = true;
+    lastTry = Date.now();
     var s = document.createElement("script");
     s.src = root + "assets/search-index.js";
-    s.onload = then;
-    s.onerror = function () {
-      loading = false;  // try again the next time the box is focused
+    function done() {
+      loading = false;
+      if (window.SFPR_INDEX) { lastTry = 0; then(); return; }
+      // Missing file, blocked script or a broken index that never set SFPR_INDEX.
       if (s.parentNode) s.parentNode.removeChild(s);
-      failed = true;
-      var box = document.getElementById("sugg");
-      if (!box) return;
-      while (box.firstChild) box.removeChild(box.firstChild);
-      var msg = document.createElement("div");
-      msg.className = "empty";
-      msg.textContent = "The search index (assets/search-index.js) could not be loaded. Build the site again.";
-      box.appendChild(msg);
-      box.style.display = "block";
-    };
+      showLoadError();
+    }
+    s.onload = done;
+    s.onerror = done;
     document.head.appendChild(s);
   }
 
@@ -142,7 +149,7 @@
     var start = new URLSearchParams(window.location.search).get("q");
     if (start) { q.value = start; loadIndex(render); }
 
-    q.addEventListener("focus", function () { loadIndex(render, true); });
+    q.addEventListener("focus", function () { loadIndex(render); });
     q.addEventListener("input", function () { loadIndex(render); });
     q.addEventListener("keydown", function (ev) {
       var items = box.querySelectorAll("a");

@@ -24,6 +24,7 @@ SOURCES = {
     "Scripts/Source/Child.psc": "Scriptname Child extends Parent\n"
                                 "Parent Property Other Auto Const Mandatory\n"
                                 "bool Property Ready = True Auto Hidden\n"
+                                "int Property Count = 5 AutoReadOnly\n"
                                 "Event OnPing(Child akSender)\n  Slow()\n  Other.Peek()\n  (akSender as Parent).Slow()\n"
                                 "  Parent:Pair p = new Parent:Pair\nEndEvent\n"
                                 "Auto State Waiting\n  Function Tick()\n  EndFunction\nEndState\n"
@@ -72,13 +73,14 @@ class Html(Base):
         parent = self.page("s/Parent.html")
         self.assertIn("Called from 2 places", parent)  # Slow(): on self and through a cast
         self.assertIn("Called from 1 place<", parent)  # Peek(): through a typed property
-        self.assertIn('href="Child.html#L7"', parent)
+        self.assertIn('href="Child.html#L8"', parent)
         self.assertIn("noindex", parent)
         child = self.page("s/Child.html")
         self.assertIn('href="Parent.html#m-pair"', child)  # Parent:Pair links to the struct
         self.assertIn("(state Waiting)", child)
         self.assertIn("Mandatory", child)
         self.assertIn("<td>Auto Hidden</td>", child)  # the default value True is not a flag
+        self.assertIn("<td>AutoReadOnly</td>", child)
         self.assertIn("ScriptObject</p>", self.page("s/NS.Deep.html"))  # the outside ancestor ends the chain
         self.assertIn('id="m-pair"', parent)  # anchors are lowercase, as Papyrus names ignore case
 
@@ -168,6 +170,17 @@ class Compare(Base):
         code, out, _ = call("compare", p, "--sources", self.src, "--json")
         r = json.loads(out)["results"][0]
         self.assertEqual((r["script"], r["status"]), ("Brand:New", "not-in-ck"))
+
+    def test_broken_scriptname_never_matches_a_shorter_name_or_the_file_name(self):
+        for text in ("Scriptname Parent.Extra extends Quest\n", "Scriptname Parent:\n"):
+            p = self.write("Parent.psc", text)
+            code, out, _ = call("compare", p, "--sources", self.src, "--json")
+            self.assertEqual(json.loads(out)["results"][0]["status"], "not-in-ck", text)
+
+    def test_trailing_text_after_the_name_still_matches(self):
+        p = self.write("Other.psc", "Scriptname Parent extends ScriptObject Native Hidden , odd\n")
+        code, out, _ = call("compare", p, "--sources", self.src, "--json")
+        self.assertEqual(json.loads(out)["results"][0]["status"], "changed")
 
     def test_pex_given_directly_is_an_error(self):
         p = self.write("Foo.pex", "binary")

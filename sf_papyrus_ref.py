@@ -534,6 +534,9 @@ def cmd_diff(ref, a):
 # ------------------------------------------------------------------ html and compare (read the sources themselves)
 
 SITE_MARK = ".sf-papyrus-ref-site"
+# The whole name, then a space or the line's end: odd text after it must not turn a named script into a
+# file-name match, and a broken name (Foo.Bar, Foo:) must not match a shorter one.
+SCRIPTNAME_START = re.compile(rf"(?i)^\s*scriptname\s+((?:{pscread.IDENT}:)*{pscread.IDENT})(?=\s|$)")
 
 
 def script_name(text):
@@ -542,11 +545,9 @@ def script_name(text):
         m = SCRIPTNAME_START.match(line)
         if m:
             return m.group(1)
+        if re.match(r"(?i)^\s*scriptname\b", line):
+            return "?"  # a Scriptname line that can't be read: never match it by file name
     return ""
-
-
-# Only the start of the line: odd text after the name must not turn a named script into a file-name match.
-SCRIPTNAME_START = re.compile(r"(?i)^\s*scriptname\s+((?:[A-Za-z_][A-Za-z0-9_]*:)*[A-Za-z_][A-Za-z0-9_]*)\b")
 
 
 def default_site():
@@ -644,7 +645,7 @@ def cmd_compare(ref, a):
         for rel, text in iter_sources(path, include_fragments=True):
             name = script_name(text)
             entry = (rel.replace("\\", "/"), text)
-            if name:
+            if name and name != "?":
                 by_name.setdefault(name.lower(), entry)
             base = os.path.basename(rel.replace("\\", "/")).lower()
             by_file[base] = None if base in by_file else entry  # a file name used twice matches nothing

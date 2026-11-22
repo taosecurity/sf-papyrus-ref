@@ -98,6 +98,18 @@ class Check(unittest.TestCase):
         code, _, _ = run_real("check", os.path.join(FIX, "nope.psc"), "--no-local")
         self.assertEqual(code, 2)
 
+    def test_psc_with_bom_reads_the_same(self):
+        with open(os.path.join(FIX, "SfprFixture.psc"), encoding="utf-8") as f:
+            text = f.read()
+        with tempfile.TemporaryDirectory() as t:
+            p = os.path.join(t, "SfprFixture.psc")
+            with open(p, "w", encoding="utf-8-sig", newline="") as f:
+                f.write(text)
+            _, plain = self.findings(os.path.join(FIX, "SfprFixture.psc"))
+            _, bom = self.findings(p)
+            key = lambda x: (x["line"], x["call"], x["rule"])  # noqa: E731
+            self.assertEqual(sorted(map(key, plain)), sorted(map(key, bom)))
+
     def test_damaged_pex(self):
         with tempfile.TemporaryDirectory() as t:
             p = os.path.join(t, "Bad.pex")
