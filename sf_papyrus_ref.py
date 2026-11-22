@@ -134,7 +134,7 @@ def iter_sources(path, include_fragments=False):
         with zipfile.ZipFile(path) as z:
             for n in sorted(z.namelist()):
                 if keep(n):
-                    yield n, z.read(n).decode("utf-8", "replace")
+                    yield n, z.read(n).decode("utf-8-sig", "replace")
         return
     for dirpath, dirs, files in os.walk(path):
         dirs.sort()
@@ -142,7 +142,7 @@ def iter_sources(path, include_fragments=False):
             full = os.path.join(dirpath, f)
             rel = os.path.relpath(full, path)
             if keep(rel):
-                with open(full, encoding="utf-8", errors="replace") as fh:
+                with open(full, encoding="utf-8-sig", errors="replace") as fh:
                     yield rel, fh.read()
 
 
@@ -534,7 +534,15 @@ def cmd_diff(ref, a):
 # ------------------------------------------------------------------ html and compare (read the sources themselves)
 
 SITE_MARK = ".sf-papyrus-ref-site"
-SCRIPTNAME_LINE = re.compile(r"(?im)^[ \t]*scriptname[ \t]+((?:[A-Za-z_][A-Za-z0-9_]*:)*[A-Za-z_][A-Za-z0-9_]*)")
+
+
+def script_name(text):
+    """The name on the script's Scriptname line, ignoring comments (so a commented-out line never counts)."""
+    for _, line in pscread.clean(text):
+        m = pscread.SCRIPTNAME_RE.match(line)
+        if m:
+            return m.group("name")
+    return ""
 
 
 def default_site():
@@ -606,8 +614,12 @@ def iter_given(paths, errors):
         if not os.path.exists(p):
             errors.append(f"{p}: not found")
         elif os.path.isfile(p) and not p.lower().endswith(".zip"):
+            if not p.lower().endswith(".psc"):
+                errors.append(f"{p}: not a .psc source file (compare reads Papyrus sources; compiled .pex files "
+                              "can't be compared)")
+                continue
             try:
-                with open(p, encoding="utf-8", errors="replace") as f:
+                with open(p, encoding="utf-8-sig", errors="replace") as f:
                     yield p, f.read()
             except OSError as e:
                 errors.append(f"{p}: could not be read ({e.strerror or e})")
@@ -626,21 +638,22 @@ def cmd_compare(ref, a):
     by_name, by_file = {}, {}
     try:
         for rel, text in iter_sources(path, include_fragments=True):
-            m = SCRIPTNAME_LINE.search(text)
+            name = script_name(text)
             entry = (rel.replace("\\", "/"), text)
-            if m:
-                by_name.setdefault(m.group(1).lower(), entry)
-            by_file.setdefault(os.path.basename(rel).lower(), entry)
+            if name:
+                by_name.setdefault(name.lower(), entry)
+            base = os.path.basename(rel.replace("\\", "/")).lower()
+            by_file[base] = None if base in by_file else entry  # a file name used twice matches nothing
     except (OSError, zipfile.BadZipFile) as e:
         print(f"Error: could not read the sources {path} ({e}).", file=sys.stderr)
         return 2
     log.info("Read %d Creation Kit scripts from %s", len(by_name), path)
     errors, results = [], []
     for shown, text in iter_given(a.paths, errors):
-        m = SCRIPTNAME_LINE.search(text)
-        name = m.group(1) if m else ""
-        ck = by_name.get(name.lower()) if name else None
-        ck = ck or by_file.get(os.path.basename(shown).lower())
+        name = script_name(text)
+        # The file name is used only when the file has no Scriptname line: a mod's own script that shares a
+        # file name with one of Bethesda's is not a copy of it.
+        ck = by_name.get(name.lower()) if name else by_file.get(os.path.basename(shown).lower())
         r = {"file": shown, "script": name, "ck_file": ck[0] if ck else ""}
         if not ck:
             r["status"] = "not-in-ck"

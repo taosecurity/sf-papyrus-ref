@@ -30,7 +30,8 @@ KEYWORDS = {"as", "auto", "autoreadonly", "betaonly", "bool", "collapsed", "coll
 TOKEN_RE = re.compile(r"(?P<bc>;/.*?(?:/;|\Z))|(?P<doc>\{[^}]*(?:\}|\Z))|(?P<lc>;[^\n]*)"
                       r"|(?P<str>\"(?:\\.|[^\"\\\n])*\"?)|(?P<num>\b(?:0x[0-9A-Fa-f]+|\d+(?:\.\d+)?)\b)"
                       rf"|(?P<id>{IDENT}(?::{IDENT})*)", re.S)
-STATE_RE = re.compile(rf"(?i)^\s*(?P<auto>auto\s+)?state\s+(?P<name>{IDENT})\s*$")
+PROP_FLAGS = {"auto", "autoreadonly", "const", "mandatory", "hidden", "conditional"}
+STATE_RE =re.compile(rf"(?i)^\s*(?P<auto>auto\s+)?state\s+(?P<name>{IDENT})\s*$")
 CUSTOMEVENT_RE = re.compile(rf"(?i)^\s*customevent\s+(?P<name>{IDENT})\s*$")
 FLAG_LABELS = {"latent": "Latent", "nondelayed": "Non-delayed", "debugonly": "DebugOnly", "betaonly": "BetaOnly",
                "invsafe": "Inventory-safe", "native": "Native", "global": "Global"}
@@ -94,7 +95,9 @@ def read_script(pscread, rel, text):
             continue
         m = pscread.PROP_RE.match(line)
         if m:
-            words = [w for w in re.findall(IDENT, line[m.end("name"):]) if w.lower() in KEYWORDS]
+            # Drop a default value (= True, = None, = "text") first, so it never shows as a flag.
+            tail = re.sub(r'^\s*=\s*(?:"(?:\\.|[^"\\])*"|\S+)', "", line[m.end("name"):])
+            words = [w for w in re.findall(IDENT, tail) if w.lower() in PROP_FLAGS]
             props.append({"name": m.group("name"), "type": m.group("type"), "line": num,
                           "flags": " ".join(w.capitalize() for w in words)})
     for mem in d["members"]:
@@ -195,7 +198,7 @@ def highlight(text, known, prefix):
                 out.append(f'<a class="t" href="{prefix}{page_name(known[low])}">{esc(tok)}</a>')
             elif ":" in low and low.rsplit(":", 1)[0] in known:
                 head, tail = tok.rsplit(":", 1)  # Script:Struct links to the struct on its script's page
-                out.append(f'<a class="t" href="{prefix}{page_name(known[head.lower()])}#m-{esc(tail)}">{esc(tok)}</a>')
+                out.append(f'<a class="t" href="{prefix}{page_name(known[head.lower()])}#m-{esc(tail.lower())}">{esc(tok)}</a>')
             else:
                 out.append(esc(tok))
         else:
@@ -219,7 +222,7 @@ def link_types(sig, known, prefix):
             parts.append(f'<a href="{prefix}{page_name(known[low])}">{esc(word)}</a>')
         elif ":" in low and low.rsplit(":", 1)[0] in known:
             head, tail = word.rsplit(":", 1)
-            parts.append(f'<a href="{prefix}{page_name(known[head.lower()])}#m-{esc(tail)}">{esc(word)}</a>')
+            parts.append(f'<a href="{prefix}{page_name(known[head.lower()])}#m-{esc(tail.lower())}">{esc(word)}</a>')
         else:
             parts.append(esc(word))
         pos = m.end()
@@ -274,8 +277,9 @@ def script_page(s, scripts, known, children, callers, official, stamp):
     head.append(line)
     if parents or ext:
         names = [s["name"]] + [x["name"] for x in parents]
-        if ext and ext.lower() not in scripts:
-            names.append(ext)
+        last = (parents[-1] if parents else s)["extends"]
+        if last and last.lower() not in scripts:
+            names.append(last)  # the first ancestor that is not in these sources, shown unlinked
         head.append('<p class="chain">' + " &rarr; ".join(link_types(n, known, p) if i else f"<b>{esc(n)}</b>"
                                                          for i, n in enumerate(names)) + "</p>")
     kids = sorted(children.get(key, []), key=str.lower)
@@ -303,7 +307,7 @@ def script_page(s, scripts, known, children, callers, official, stamp):
             more = f"<li>and {len(who) - MAX_CALLERS} more</li>" if len(who) > MAX_CALLERS else ""
             calls = (f'<details><summary>Called from {len(who)} place{"s" if len(who) != 1 else ""}</summary>'
                      f'<ul class="cols">{items}{more}</ul></details>')
-        rows.append(f'<tr id="m-{esc(m["name"])}"><td class="kind">{esc(m["kind"])}</td>'
+        rows.append(f'<tr id="m-{esc(m["name"].lower())}"><td class="kind">{esc(m["kind"])}</td>'
                     f'<td><code>{link_types(m["sig"], known, p)}</code>{badges(flags)}{wiki}{calls}</td>'
                     f'<td class="where">{where}</td></tr>')
     if rows:
@@ -335,7 +339,7 @@ def script_page(s, scripts, known, children, callers, official, stamp):
         for par in parents:
             names = [m["name"] for m in par["members"] if m["kind"] in ("function", "event")]
             part.append(f'<details><summary>{esc(par["name"])}: {len(names)} functions and events</summary><p class="cols">'
-                        + " ".join(f'<a href="{page_name(par["name"])}#m-{esc(n)}"><code>{esc(n)}</code></a>' for n in names)
+                        + " ".join(f'<a href="{page_name(par["name"])}#m-{esc(n.lower())}"><code>{esc(n)}</code></a>' for n in names)
                         + "</p></details>")
         part.append("</section>")
         body.append("".join(part))
@@ -474,6 +478,9 @@ def build(pscread, sources_iter, sources_label, out, official, stamp, log, asset
         f = folder_of(s["file"])
         folders[f] = folders.get(f, 0) + 1
 
+    # The marker goes first, so a build that is stopped partway can still be rebuilt over.
+    os.makedirs(out, exist_ok=True)
+    write(os.path.join(out, ".sf-papyrus-ref-site"), "Built by sf-papyrus-ref html. Safe to rebuild over.\n")
     os.makedirs(os.path.join(out, "s"), exist_ok=True)
     os.makedirs(os.path.join(out, "assets"), exist_ok=True)
     for name in ("site.css", "site.js"):
@@ -496,6 +503,5 @@ def build(pscread, sources_iter, sources_label, out, official, stamp, log, asset
         if f.lower().endswith(".html") and f.lower() not in pages:
             os.remove(os.path.join(out, "s", f))
             log.debug("Removed old page s/%s", f)
-    write(os.path.join(out, ".sf-papyrus-ref-site"), "Built by sf-papyrus-ref html. Safe to rebuild over.\n")
     return {"scripts": len(scripts), "members": n_members, "calls": n_calls, "folders": len(folders),
             "pages": len(pages) + len(wanted)}

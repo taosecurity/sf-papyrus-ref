@@ -22,7 +22,7 @@ Download `sf-papyrus-ref-0.2.0.zip` and `sf-papyrus-ref-0.2.0.zip.sha256` from h
 
     certutil -hashfile sf-papyrus-ref-0.2.0.zip SHA256
 
-On Linux, run `sha256sum -c sf-papyrus-ref-0.2.0.zip.sha256` instead. Unzip it anywhere and keep its files together; `sf_papyrus_ref.py` loads `pexread.py`, `pscread.py` and `data/` from its own folder.
+On Linux, run `sha256sum -c sf-papyrus-ref-0.2.0.zip.sha256` instead. Unzip it anywhere and keep its files together; `sf_papyrus_ref.py` loads `pexread.py`, `pscread.py`, `htmlsite.py`, `data/` and `site-assets/` from its own folder.
 
 ## 4. Prove the install works
 

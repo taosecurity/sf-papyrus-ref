@@ -19,10 +19,11 @@ spec.loader.exec_module(ref_mod)
 # Made-up sources: a parent, a child that calls the parent in three ways, a struct, a property, a state,
 # a namespaced script, markup characters in a comment and a string, and a fragment.
 SOURCES = {
-    "Scripts/Source/Parent.psc": "Scriptname Parent Native Hidden\nFunction Slow() native\n"
+    "Scripts/Source/Parent.psc": "Scriptname Parent extends ScriptObject Native Hidden\nFunction Slow() native\n"
                                  "Function Peek() native DebugOnly\nStruct Pair\n  int A\nEndStruct\n",
     "Scripts/Source/Child.psc": "Scriptname Child extends Parent\n"
                                 "Parent Property Other Auto Const Mandatory\n"
+                                "bool Property Ready = True Auto Hidden\n"
                                 "Event OnPing(Child akSender)\n  Slow()\n  Other.Peek()\n  (akSender as Parent).Slow()\n"
                                 "  Parent:Pair p = new Parent:Pair\nEndEvent\n"
                                 "Auto State Waiting\n  Function Tick()\n  EndFunction\nEndState\n"
@@ -71,12 +72,15 @@ class Html(Base):
         parent = self.page("s/Parent.html")
         self.assertIn("Called from 2 places", parent)  # Slow(): on self and through a cast
         self.assertIn("Called from 1 place<", parent)  # Peek(): through a typed property
-        self.assertIn('href="Child.html#L6"', parent)
+        self.assertIn('href="Child.html#L7"', parent)
         self.assertIn("noindex", parent)
         child = self.page("s/Child.html")
-        self.assertIn('href="Parent.html#m-Pair"', child)  # Parent:Pair links to the struct
+        self.assertIn('href="Parent.html#m-pair"', child)  # Parent:Pair links to the struct
         self.assertIn("(state Waiting)", child)
         self.assertIn("Mandatory", child)
+        self.assertIn("<td>Auto Hidden</td>", child)  # the default value True is not a flag
+        self.assertIn("ScriptObject</p>", self.page("s/NS.Deep.html"))  # the outside ancestor ends the chain
+        self.assertIn('id="m-pair"', parent)  # anchors are lowercase, as Papyrus names ignore case
 
     def test_source_text_is_escaped_and_no_inline_scripts(self):
         call("html", "--sources", self.src, "--out", self.out)
@@ -147,6 +151,29 @@ class Compare(Base):
         code, out, _ = call("compare", p, "--sources", self.src)
         self.assertEqual(code, 0)
         self.assertIn("1 identical, 0 changed, 0 not from the Creation Kit", out)
+
+    def test_bom_is_ignored(self):
+        p = self.write("Parent.psc", "﻿" + SOURCES["Scripts/Source/Parent.psc"])
+        code, out, _ = call("compare", p, "--sources", self.src, "--json")
+        self.assertEqual(code, 0)
+        self.assertEqual(json.loads(out)["results"][0]["status"], "identical")
+
+    def test_own_script_with_a_bethesda_file_name_is_not_a_copy(self):
+        p = self.write("Child.psc", "Scriptname MyMod:Child extends Quest\n")
+        code, out, _ = call("compare", p, "--sources", self.src, "--json")
+        self.assertEqual(json.loads(out)["results"][0]["status"], "not-in-ck")
+
+    def test_commented_scriptname_is_ignored(self):
+        p = self.write("X.psc", ";/\nScriptname Parent\n/;\nScriptname Brand:New extends Quest\n")
+        code, out, _ = call("compare", p, "--sources", self.src, "--json")
+        r = json.loads(out)["results"][0]
+        self.assertEqual((r["script"], r["status"]), ("Brand:New", "not-in-ck"))
+
+    def test_pex_given_directly_is_an_error(self):
+        p = self.write("Foo.pex", "binary")
+        code, _, err = call("compare", p, "--sources", self.src)
+        self.assertEqual(code, 2)
+        self.assertIn("not a .psc source file", err)
 
     def test_missing_path(self):
         code, _, err = call("compare", os.path.join(self.tmp.name, "nope"), "--sources", self.src)

@@ -57,6 +57,17 @@
     var s = document.createElement("script");
     s.src = root + "assets/search-index.js";
     s.onload = then;
+    s.onerror = function () {
+      loading = false;  // try again on the next keystroke
+      var box = document.getElementById("sugg");
+      if (!box) return;
+      while (box.firstChild) box.removeChild(box.firstChild);
+      var msg = document.createElement("div");
+      msg.className = "empty";
+      msg.textContent = "The search index (assets/search-index.js) could not be loaded. Build the site again.";
+      box.appendChild(msg);
+      box.style.display = "block";
+    };
     document.head.appendChild(s);
   }
 
@@ -72,7 +83,7 @@
       var page = root + "s/" + row[3];
       if (row[2] === "s") return page;
       if (row[2] === "p") return page + "#L" + row[4];
-      return page + "#m-" + row[0];
+      return page + "#m-" + row[0].toLowerCase();
     }
 
     function render() {
