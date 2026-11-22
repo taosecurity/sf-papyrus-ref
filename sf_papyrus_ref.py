@@ -545,9 +545,12 @@ def script_name(text):
         m = SCRIPTNAME_START.match(line)
         if m:
             return m.group(1)
-        if re.match(r"(?i)^\s*scriptname\b", line):
-            return "?"  # a Scriptname line that can't be read: never match it by file name
+        if re.match(r"(?i)^\s*scriptname\s+[^\s=]", line):
+            return UNREADABLE  # a Scriptname line that can't be read: never match it by file name
     return ""
+
+
+UNREADABLE = "?"
 
 
 def default_site():
@@ -645,7 +648,9 @@ def cmd_compare(ref, a):
         for rel, text in iter_sources(path, include_fragments=True):
             name = script_name(text)
             entry = (rel.replace("\\", "/"), text)
-            if name and name != "?":
+            if name == UNREADABLE:
+                continue  # never matched, by name or by file name
+            if name:
                 by_name.setdefault(name.lower(), entry)
             base = os.path.basename(rel.replace("\\", "/")).lower()
             by_file[base] = None if base in by_file else entry  # a file name used twice matches nothing
@@ -658,8 +663,14 @@ def cmd_compare(ref, a):
         name = script_name(text)
         # The file name is used only when the file has no Scriptname line: a mod's own script that shares a
         # file name with one of Bethesda's is not a copy of it.
-        ck = by_name.get(name.lower()) if name else by_file.get(os.path.basename(shown).lower())
+        unreadable = name == UNREADABLE
+        if unreadable:
+            name, ck = "", None
+        else:
+            ck = by_name.get(name.lower()) if name else by_file.get(os.path.basename(shown).lower())
         r = {"file": shown, "script": name, "ck_file": ck[0] if ck else ""}
+        if unreadable:
+            r["note"] = "the Scriptname line could not be read"
         if not ck:
             r["status"] = "not-in-ck"
         else:
@@ -682,7 +693,8 @@ def cmd_compare(ref, a):
             if r["status"] == "changed":
                 print(f"changed    {r['file']}  (+{r['lines_added']} -{r['lines_removed']} lines against {r['ck_file']})")
             elif r["status"] == "not-in-ck":
-                print(f"not in CK  {r['file']}" + (f"  (Scriptname {r['script']})" if r["script"] else ""))
+                why = f"  (Scriptname {r['script']})" if r["script"] else f"  ({r['note']})" if r.get("note") else ""
+                print(f"not in CK  {r['file']}{why}")
             elif a.all:
                 print(f"identical  {r['file']}")
         for e in errors:

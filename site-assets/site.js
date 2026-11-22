@@ -53,8 +53,10 @@
 
   function showLoadError() {
     var box = document.getElementById("sugg");
+    var q = document.getElementById("q");
     if (!box) return;
     while (box.firstChild) box.removeChild(box.firstChild);
+    if (q && !q.value.trim()) { box.style.display = "none"; return; }  // nothing typed: nothing to show
     var msg = document.createElement("div");
     msg.className = "empty";
     msg.textContent = "The search index (assets/search-index.js) could not be loaded. Build the site again.";
@@ -75,6 +77,7 @@
       if (window.SFPR_INDEX) { lastTry = 0; then(); return; }
       // Missing file, blocked script or a broken index that never set SFPR_INDEX.
       if (s.parentNode) s.parentNode.removeChild(s);
+      lastTry = Date.now();  // the 5 seconds count from the failure, however long the load took
       showLoadError();
     }
     s.onload = done;

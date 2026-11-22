@@ -175,7 +175,12 @@ class Compare(Base):
         for text in ("Scriptname Parent.Extra extends Quest\n", "Scriptname Parent:\n"):
             p = self.write("Parent.psc", text)
             code, out, _ = call("compare", p, "--sources", self.src, "--json")
-            self.assertEqual(json.loads(out)["results"][0]["status"], "not-in-ck", text)
+            r = json.loads(out)["results"][0]
+            self.assertEqual((r["status"], r["script"]), ("not-in-ck", ""), text)
+            self.assertIn("could not be read", r["note"])
+        p = self.write("Parent.psc", "ScriptName = 1\n")  # not a Scriptname line: the file name decides
+        code, out, _ = call("compare", p, "--sources", self.src, "--json")
+        self.assertEqual(json.loads(out)["results"][0]["status"], "changed")
 
     def test_trailing_text_after_the_name_still_matches(self):
         p = self.write("Other.psc", "Scriptname Parent extends ScriptObject Native Hidden , odd\n")
