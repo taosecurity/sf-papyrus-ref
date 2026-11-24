@@ -378,8 +378,22 @@ class ShippedData(unittest.TestCase):
 class ReleaseZip(unittest.TestCase):
     def test_zip_has_no_folder_around_the_files(self):
         """T9: Extract All makes the one folder named after the zip, so the zip itself must not add another."""
+        import subprocess
         import zipfile
+        # The release zip has no .git, so this test only runs in a git checkout of this repo (not an unzipped release).
+        try:
+            top = subprocess.run(["git", "-C", ROOT, "rev-parse", "--show-toplevel"], capture_output=True,
+                                 text=True, check=True).stdout.strip()
+        except (OSError, subprocess.CalledProcessError):
+            top = ""
+        if not top or os.path.normcase(os.path.abspath(top)) != os.path.normcase(ROOT):
+            self.skipTest("not a git checkout of sf-papyrus-ref (an unzipped release has no .git)")
         rel = load("build_release", os.path.join(ROOT, "build_release.py"))
+        notes = os.path.join(ROOT, "build", "release-notes.md")
+        saved = None
+        if os.path.exists(notes):
+            with open(notes, "rb") as f:
+                saved = f.read()
         with tempfile.TemporaryDirectory() as t:
             old = sys.argv
             sys.argv = ["build_release.py", "--allow-dirty", "--dist", t]
@@ -388,6 +402,12 @@ class ReleaseZip(unittest.TestCase):
                     self.assertEqual(rel.main(), 0)
             finally:
                 sys.argv = old
+                # The build always writes build/release-notes.md; put back a real release's notes.
+                if saved is not None:
+                    with open(notes, "wb") as f:
+                        f.write(saved)
+                elif os.path.exists(notes):
+                    os.remove(notes)
             zips = [n for n in os.listdir(t) if n.endswith(".zip")]
             self.assertEqual(len(zips), 1)
             with zipfile.ZipFile(os.path.join(t, zips[0])) as z:
