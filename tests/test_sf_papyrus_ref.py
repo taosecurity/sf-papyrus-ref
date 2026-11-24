@@ -82,7 +82,33 @@ class Check(unittest.TestCase):
         self.assertEqual(code, 1)
         self.assertEqual({x["call"]: x["severity"] for x in f}["Game.Warning"], "error")
         code, f = self.findings(os.path.join(FIX, "SfprFixture.psc"), "--creations")
-        self.assertEqual({x["call"]: x["severity"] for x in f}["Debug.Notification"], "error")
+        sev = {x["call"]: x["severity"] for x in f}
+        # T4: consoles only ignore these, so they stay warnings under --creations (as in sf-mod-check)
+        self.assertEqual((sev["Debug.Trace"], sev["Debug.Notification"], sev["Debug.MessageBox"]),
+                         ("warning", "warning", "warning"))
+        self.assertEqual(sev["Game.Warning"], "error")
+
+    def test_creations_other_debugonly_call_is_an_error(self):
+        with tempfile.TemporaryDirectory() as t:
+            p = os.path.join(t, "Quitter.psc")
+            with open(p, "w", encoding="utf-8") as f:
+                f.write("Scriptname Quitter extends Quest\nEvent OnQuestInit()\n\tDebug.Trace(\"x\")\n"
+                        "\tDebug.QuitGame()\nEndEvent\n")
+            code, f = self.findings(p, "--creations")
+            self.assertEqual({x["call"]: x["severity"] for x in f},
+                             {"Debug.Trace": "warning", "Debug.QuitGame": "error"})
+            self.assertEqual(code, 1)
+
+    def test_warnings_alone_exit_0(self):
+        with tempfile.TemporaryDirectory() as t:
+            p = os.path.join(t, "Quiet.psc")
+            with open(p, "w", encoding="utf-8") as f:
+                f.write("Scriptname Quiet extends Quest\nEvent OnQuestInit()\n\tDebug.Trace(\"x\")\n"
+                        "\tDebug.Notification(\"y\")\nEndEvent\n")
+            for extra in ((), ("--creations",)):
+                code, f = self.findings(p, *extra)
+                self.assertEqual({x["severity"] for x in f}, {"warning"})
+                self.assertEqual(code, 0)
 
     def test_allow(self):
         _, f = self.findings(os.path.join(FIX, "SfprFixture.pex"), "--allow", "debug.trace,Debug.Notification")
@@ -309,6 +335,17 @@ class ShippedData(unittest.TestCase):
             self.assertIn(e["kind"], ("function", "event", "struct"))
             self.assertTrue(set(e["flags"]) <= set(build_mod.FLAG_ORDER))
 
+    def test_quest_and_alias_names_are_listed(self):
+        """T7: the wiki has no pages for these, so a lookup without build-local used to say 'not found'."""
+        have = {(e["script"], e["name"]) for e in self.doc["entries"]}
+        for want in (("Quest", "SetStage"), ("Quest", "GetStageDone"), ("Quest", "GetStage"),
+                     ("ReferenceAlias", "OnLoad"), ("ReferenceAlias", "GetRef"), ("RefCollectionAlias", "OnLoad")):
+            self.assertIn(want, have)
+        for name in ("Quest.SetStage", "Quest.GetStageDone", "ReferenceAlias.OnLoad"):
+            code, out, _ = run_real("lookup", name, "--no-local")
+            self.assertEqual(code, 0, name)
+            self.assertIn("no page", out)
+
     def test_counts_agree(self):
         c = self.doc["counts"]
         es = self.doc["entries"]
@@ -317,7 +354,44 @@ class ShippedData(unittest.TestCase):
             self.assertEqual(c[f], sum(f in e["flags"] for e in es))
 
 
+class ReleaseZip(unittest.TestCase):
+    def test_zip_has_no_folder_around_the_files(self):
+        """T9: Extract All makes the one folder named after the zip, so the zip itself must not add another."""
+        import zipfile
+        rel = load("build_release", os.path.join(ROOT, "build_release.py"))
+        with tempfile.TemporaryDirectory() as t:
+            old = sys.argv
+            sys.argv = ["build_release.py", "--allow-dirty", "--dist", t]
+            try:
+                with contextlib.redirect_stdout(io.StringIO()):
+                    self.assertEqual(rel.main(), 0)
+            finally:
+                sys.argv = old
+            zips = [n for n in os.listdir(t) if n.endswith(".zip")]
+            self.assertEqual(len(zips), 1)
+            with zipfile.ZipFile(os.path.join(t, zips[0])) as z:
+                names = z.namelist()
+            self.assertIn("sf_papyrus_ref.py", names)
+            self.assertIn("data/official-names.json", names)
+            self.assertFalse([n for n in names if n.startswith("sf-papyrus-ref-")])
+
+
 class Builder(unittest.TestCase):
+    def test_source_names_are_added_once(self):
+        with tempfile.TemporaryDirectory() as t:
+            with open(os.path.join(t, "Quest.psc"), "w", encoding="utf-8") as f:
+                f.write("Scriptname Quest extends Form Native Hidden\nbool Function SetStage(int aiStage)\nEndFunction\n"
+                        "Function SetCurrentStageID(int a) native\nEvent OnReset()\nEndEvent\n")
+            scripts = ["Quest"]
+            entries = [{"script": "Quest", "name": "SetCurrentStageID", "kind": "function", "flags": ["latent"],
+                        "wiki": build_mod.WIKI_BASE + "x"}]
+            build_mod.add_source_names(scripts, entries, t)
+            got = {(e["name"], e["kind"], e.get("origin")) for e in entries}
+            self.assertEqual(got, {("SetCurrentStageID", "function", None), ("SetStage", "function", "sources"),
+                                   ("OnReset", "event", "sources")})
+            build_mod.check_shape({"entries": entries})
+
+
     def page(self, name, cats, body):
         return {"page": name, "title": name.replace("_", " "), "cats": set(cats), "body": body, "rev": 5,
                 "kind": build_mod.kind_of("", name, set(cats), len(build_mod.plain(body).split()))}

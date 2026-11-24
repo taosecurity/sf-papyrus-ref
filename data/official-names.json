@@ -1,12 +1,12 @@
 {
  "format": 1,
- "source": "Names and flag categories from the official Starfield Creation Kit wiki (starfield.creationkit.bethesda.net). Names, flags and links only: no wiki text, no signatures and no game script sources.",
+ "source": "Names and flag categories from the official Starfield Creation Kit wiki (starfield.creationkit.bethesda.net), plus the names of quest and alias functions and events the wiki lacks (origin: sources). Names, flags and links only: no wiki text, no signatures and no game script sources.",
  "wiki_revision": 8392,
- "built": "2026-11-20",
+ "built": "2026-11-24",
  "counts": {
   "scripts": 103,
-  "functions": 1390,
-  "events": 260,
+  "functions": 1401,
+  "events": 540,
   "structs": 3,
   "latent": 63,
   "nondelayed": 194,
@@ -2265,6 +2265,22 @@
     "nondelayed"
    ],
    "wiki": "https://starfield.creationkit.bethesda.net/w/index.php?title=RefillDependentAliases_-_Alias"
+  },
+  {
+   "script": "Alias",
+   "name": "StartObjectProfiling",
+   "kind": "function",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "Alias",
+   "name": "StopObjectProfiling",
+   "kind": "function",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
   },
   {
    "script": "Array",
@@ -8640,6 +8656,22 @@
   },
   {
    "script": "Quest",
+   "name": "GetStage",
+   "kind": "function",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "Quest",
+   "name": "GetStageDone",
+   "kind": "function",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "Quest",
    "name": "HasObjective",
    "kind": "function",
    "flags": [],
@@ -8805,6 +8837,14 @@
    "kind": "event",
    "flags": [],
    "wiki": "https://starfield.creationkit.bethesda.net/w/index.php?title=OnQuestTimerStart_-_Quest"
+  },
+  {
+   "script": "Quest",
+   "name": "OnReset",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
   },
   {
    "script": "Quest",
@@ -9151,6 +9191,14 @@
   },
   {
    "script": "Quest",
+   "name": "SetAllStages",
+   "kind": "function",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "Quest",
    "name": "SetCurrentStageID",
    "kind": "function",
    "flags": [
@@ -9213,6 +9261,14 @@
    "kind": "function",
    "flags": [],
    "wiki": "https://starfield.creationkit.bethesda.net/w/index.php?title=SetQuestStage_-_Quest"
+  },
+  {
+   "script": "Quest",
+   "name": "SetStage",
+   "kind": "function",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
   },
   {
    "script": "Quest",
@@ -9489,10 +9545,1122 @@
   },
   {
    "script": "RefCollectionAlias",
+   "name": "OnActivate",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnActorActivatedRef",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnAffinityEvent",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
    "name": "OnAliasChanged",
    "kind": "event",
    "flags": [],
    "wiki": "https://starfield.creationkit.bethesda.net/w/index.php?title=OnAliasChanged_-_RefCollectionAlias"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnBuilderMenuSelect",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnCellAttach",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnCellDetach",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnCellLoad",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnClose",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnCombatListAdded",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnCombatListRemoved",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnCombatStateChanged",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnCommandModeCompleteCommand",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnCommandModeEnter",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnCommandModeExit",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnCommandModeGiveCommand",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnCompanionDismiss",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnConsciousnessStateChanged",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnContainerChanged",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnCrewAssigned",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnCrewDismissed",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnCripple",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnDeath",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnDeferredKill",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnDestroyed",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnDestructionStageChanged",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnDifficultyChanged",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnDying",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnEnterBleedout",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnEnterFurniture",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnEnterOutpostBeaconMode",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnEnterShipInterior",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnEnterSneaking",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnEquipped",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnEscortWaitStart",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnEscortWaitStop",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnExitFurniture",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnExitShipInterior",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnGetUp",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnGrab",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnHomeShipSet",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnItemAdded",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnItemEquipped",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnItemRemoved",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnItemUnequipped",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnKill",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnLoad",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnLocationChange",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnLockStateChanged",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnMapMarkerDiscovered",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnObjectDestroyed",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnObjectRepaired",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnOpen",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnOutpostItemPowerOff",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnOutpostItemPowerOn",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnOutpostPlaced",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnPackageChange",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnPackageEnd",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnPackageStart",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnPartialCripple",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnPickLock",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnPickpocketFailed",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnPipboyRadioDetection",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnPlayerArrested",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnPlayerAssaultActor",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnPlayerBuyShip",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnPlayerCompleteResearch",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnPlayerCraftItem",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnPlayerCreateRobot",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnPlayerCrimeGold",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnPlayerDialogueTarget",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnPlayerEnterVertibird",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnPlayerFailedPlotRoute",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnPlayerFallLongDistance",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnPlayerFireWeapon",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnPlayerFollowerWarp",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnPlayerHealTeammate",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnPlayerItemAdded",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnPlayerJail",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnPlayerLoadGame",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnPlayerLoiteringBegin",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnPlayerLoiteringEnd",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnPlayerModArmorWeapon",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnPlayerModifiedShip",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnPlayerModRobot",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnPlayerMurderActor",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnPlayerPayFine",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnPlayerPlanetSurveyComplete",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnPlayerScannedObject",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnPlayerSellShip",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnPlayerSwimming",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnPlayerTrespass",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnPlayerUseWorkBench",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnPowerOff",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnPowerOn",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnQuickContainerOpened",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnRaceSwitchComplete",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnRead",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnRecoverFromBleedout",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnRelease",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnReset",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnScanned",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnSell",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnShipBought",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnShipCruiseArrival",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnShipDock",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnShipFarTravel",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnShipGravJump",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnShipLanding",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnShipRampDown",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnShipRefueled",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnShipScan",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnShipSold",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnShipSystemDamaged",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnShipSystemPowerChange",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnShipSystemRepaired",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnShipTakeOff",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnShipUndock",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnSit",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnSpeechChallengeAvailable",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnSpellCast",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnTerminalMenuItemRun",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnTranslationAlmostComplete",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnTranslationComplete",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnTranslationFailed",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnTrapHitStart",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnTrapHitStop",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnTriggerEnter",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnTriggerLeave",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnUnequipped",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnUnload",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnWorkshopCargoLinkChanged",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnWorkshopFlyCam",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnWorkshopMode",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnWorkshopNPCTransfer",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnWorkshopObjectGrabbed",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnWorkshopObjectMoved",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnWorkshopObjectPlaced",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnWorkshopObjectRemoved",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "RefCollectionAlias",
+   "name": "OnWorkshopOutputLink",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
   },
   {
    "script": "RefCollectionAlias",
@@ -9653,10 +10821,26 @@
   },
   {
    "script": "ReferenceAlias",
+   "name": "GetActorRef",
+   "kind": "function",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
    "name": "GetActorReference",
    "kind": "function",
    "flags": [],
    "wiki": "https://starfield.creationkit.bethesda.net/w/index.php?title=GetActorReference_-_ReferenceAlias"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "GetRef",
+   "kind": "function",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
   },
   {
    "script": "ReferenceAlias",
@@ -9669,6 +10853,14 @@
   },
   {
    "script": "ReferenceAlias",
+   "name": "GetShipRef",
+   "kind": "function",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
    "name": "GetShipReference",
    "kind": "function",
    "flags": [],
@@ -9676,10 +10868,1130 @@
   },
   {
    "script": "ReferenceAlias",
+   "name": "OnActivate",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnActorActivatedRef",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnAffinityEvent",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
    "name": "OnAliasChanged",
    "kind": "event",
    "flags": [],
    "wiki": "https://starfield.creationkit.bethesda.net/w/index.php?title=OnAliasChanged_-_ReferenceAlias"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnBuilderMenuSelect",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnCellAttach",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnCellDetach",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnCellLoad",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnClose",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnCombatListAdded",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnCombatListRemoved",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnCombatStateChanged",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnCommandModeCompleteCommand",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnCommandModeEnter",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnCommandModeExit",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnCommandModeGiveCommand",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnCompanionDismiss",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnConsciousnessStateChanged",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnContainerChanged",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnCrewAssigned",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnCrewDismissed",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnCripple",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnDeath",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnDeferredKill",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnDestroyed",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnDestructionStageChanged",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnDifficultyChanged",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnDying",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnEnterBleedout",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnEnterFurniture",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnEnterOutpostBeaconMode",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnEnterShipInterior",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnEnterSneaking",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnEquipped",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnEscortWaitStart",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnEscortWaitStop",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnExitFurniture",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnExitShipInterior",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnGetUp",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnGrab",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnHomeShipSet",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnItemAdded",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnItemEquipped",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnItemRemoved",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnItemUnequipped",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnKill",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnLoad",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnLocationChange",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnLockStateChanged",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnMapMarkerDiscovered",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnObjectDestroyed",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnObjectRepaired",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnOpen",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnOutpostItemPowerOff",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnOutpostItemPowerOn",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnOutpostPlaced",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnPackageChange",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnPackageEnd",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnPackageStart",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnPartialCripple",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnPickLock",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnPickpocketFailed",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnPipboyRadioDetection",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnPlayerArrested",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnPlayerAssaultActor",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnPlayerBuyShip",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnPlayerCompleteResearch",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnPlayerCraftItem",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnPlayerCreateRobot",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnPlayerCrimeGold",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnPlayerDialogueTarget",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnPlayerEnterVertibird",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnPlayerFailedPlotRoute",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnPlayerFallLongDistance",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnPlayerFireWeapon",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnPlayerFollowerWarp",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnPlayerHealTeammate",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnPlayerItemAdded",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnPlayerJail",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnPlayerLoadGame",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnPlayerLoiteringBegin",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnPlayerLoiteringEnd",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnPlayerModArmorWeapon",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnPlayerModifiedShip",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnPlayerModRobot",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnPlayerMurderActor",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnPlayerPayFine",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnPlayerPlanetSurveyComplete",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnPlayerScannedObject",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnPlayerSellShip",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnPlayerSwimming",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnPlayerTrespass",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnPlayerUseWorkBench",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnPowerOff",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnPowerOn",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnQuickContainerOpened",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnRaceSwitchComplete",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnRead",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnRecoverFromBleedout",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnRelease",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnReset",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnScanned",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnSell",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnShipBought",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnShipCruiseArrival",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnShipDock",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnShipFarTravel",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnShipGravJump",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnShipLanding",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnShipRampDown",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnShipRefueled",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnShipScan",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnShipSold",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnShipSystemDamaged",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnShipSystemPowerChange",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnShipSystemRepaired",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnShipTakeOff",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnShipUndock",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnSit",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnSpeechChallengeAvailable",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnSpellCast",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnTerminalMenuItemRun",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnTranslationAlmostComplete",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnTranslationComplete",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnTranslationFailed",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnTrapHitStart",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnTrapHitStop",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnTriggerEnter",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnTriggerLeave",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnUnconscious",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnUnequipped",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnUnload",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnWorkshopCargoLinkChanged",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnWorkshopFlyCam",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnWorkshopMode",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnWorkshopNPCTransfer",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnWorkshopObjectGrabbed",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnWorkshopObjectMoved",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnWorkshopObjectPlaced",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnWorkshopObjectRemoved",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "OnWorkshopOutputLink",
+   "kind": "event",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
   },
   {
    "script": "ReferenceAlias",
@@ -9750,6 +12062,14 @@
    "kind": "function",
    "flags": [],
    "wiki": "https://starfield.creationkit.bethesda.net/w/index.php?title=TryToEvaluatePackage_-_ReferenceAlias"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "TryToGetActorValue",
+   "kind": "function",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
   },
   {
    "script": "ReferenceAlias",
@@ -9834,6 +12154,14 @@
    "kind": "function",
    "flags": [],
    "wiki": "https://starfield.creationkit.bethesda.net/w/index.php?title=TryToSendSmugglingAlarm_-_ReferenceAlias"
+  },
+  {
+   "script": "ReferenceAlias",
+   "name": "TryToSetActorValue",
+   "kind": "function",
+   "flags": [],
+   "wiki": "",
+   "origin": "sources"
   },
   {
    "script": "ReferenceAlias",

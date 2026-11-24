@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.2.4 (2026-11-24)
+
+### Fixes
+
+- **Quest functions are on the shipped list.** `Quest.SetStage`, `Quest.GetStageDone`, `Quest.GetStage`, `Quest.SetAllStages` and the events of `ReferenceAlias` and `RefCollectionAlias` (`OnLoad`, `OnDeath` and the rest) were reported as "not in the official list" unless you had run `build-local`. The cause: the official wiki has no page for the functions and events that Bethesda writes in Papyrus rather than natively, and the list is built from the wiki's pages. The build now adds the names of those scripts from the Creation Kit's sources (names only, 291 of them), and `lookup` says "The official wiki has no page for this name" for them.
+- **`check --creations` no longer fails the usual debug-switch pattern.** `Debug.Trace`, `Debug.Notification` and `Debug.MessageBox` are warnings with `--creations`, as in `sf-mod-check release --profile creations`: consoles ignore them. Any other DebugOnly call, such as `Debug.QuitGame`, is still an error. You no longer need `--allow Debug.Trace,Debug.Notification`.
+- **`check` exits 0 when it found only warnings.** It exits 1 only when there is an error (BetaOnly, or DebugOnly under `--creations`). Before, any finding made it exit 1.
+- **The release zip no longer nests a folder.** The files are at the top of the zip, so Windows' Extract All makes one folder, `sf-papyrus-ref-0.2.4`. The README and AGENTS.md say so, and give the Linux command.
+
+### Example
+
+    > sf-papyrus-ref check Scripts\Source --creations
+    sf-papyrus-ref 0.2.4 by Richard Bejtlich - MIT - https://github.com/taosecurity/sf-papyrus-ref
+    Scripts\Source\PTCR\CourierQuestScript.psc:81: warning: Debug.Trace is DebugOnly: consoles ignore it, so Xbox and PlayStation players see nothing
+    Scripts\Source\PTCR\CourierQuestScript.psc:83: warning: Debug.Notification is DebugOnly: consoles ignore it, so Xbox and PlayStation players see nothing
+    It checked 2 files and found 0 errors and 2 warnings.
+
+    > sf-papyrus-ref lookup Quest.SetStage
+    Quest.SetStage  (function)
+      Flags: none
+      The official wiki has no page for this name; it is defined in the Creation Kit's script sources.
+
 ## 0.2.3 (2026-11-22)
 
 ### Fixes

@@ -21,7 +21,7 @@ Flags: latent, nondelayed, debugonly, betaonly, invsafe (Latent, Non-delayed, De
 Options (after the command): --json (machine-readable output), --quiet (no byline), --verbose (log to stderr),
 --log <file> (log to a file), --data <file> (another official-names.json), --cache <file> (the local cache;
 default %LOCALAPPDATA%\\sf-papyrus-ref\\local.json, or ~/.cache/sf-papyrus-ref/local.json), --no-local.
-check also takes --allow Script.Name (never report it), --creations (DebugOnly is an error) and --strict.
+check also takes --allow Script.Name (never report it), --creations (DebugOnly is an error, except Debug.Trace, Debug.Notification and Debug.MessageBox) and --strict.
 
 The shipped list holds names, flags and links to the official Creation Kit wiki only. It never guesses: a name
 that is not in the list is reported as not found, with near matches. Signatures come only from your own sources.
@@ -41,7 +41,7 @@ import re
 import sys
 import zipfile
 
-VERSION = "0.2.3"
+VERSION = "0.2.4"
 AUTHOR = "Richard Bejtlich"
 LICENSE = "MIT"
 URL = "https://github.com/taosecurity/sf-papyrus-ref"
@@ -349,6 +349,9 @@ def cmd_lookup(ref, a):
         if e.get("wiki"):
             print(f"  Flags: {flag_text(e)}")
             print(f"  Official page: {e['wiki']}")
+        elif e.get("origin") == "sources":
+            print(f"  Flags: {flag_text(e)}")
+            print("  The official wiki has no page for this name; it is defined in the Creation Kit's script sources.")
         else:
             print("  Not on the official list; found in your sources"
                   + (f" (marked {', '.join(FLAGS[f] for f in e['source_flags'])})" if e.get("source_flags") else ""))
@@ -742,6 +745,10 @@ RULES = {
     "debugonly": ("warning", "is DebugOnly: it does nothing in release builds on Xbox and PlayStation"),
     "latent-loop": ("warning", "is Latent and is called inside a loop: each pass waits for it to finish"),
 }
+# DebugOnly calls that only do nothing on consoles. With --creations they stay warnings; any other DebugOnly call
+# (QuitGame, ExecuteConsole, SetGodMode ...) is an error. sf-mod-check's creations-debug rule warns about the same
+# on-screen calls and does not report Debug.Trace.
+CONSOLE_IGNORED = {"debug.trace", "debug.notification", "debug.messagebox"}
 
 
 class Checker:
@@ -824,9 +831,14 @@ class Checker:
                           where, line, name, len(has), len(cands), flag)
                 continue
             sev, text = RULES[rule]
-            if rule == "debugonly" and self.creations:
-                sev = "error"
             call = labels[0] if exact else " or ".join(f"{c[0]}.{name}" for c in has)
+            if rule == "debugonly" and self.creations:
+                if all(f"{c[0]}.{name}".lower() in CONSOLE_IGNORED for c in has):
+                    # Consoles just ignore these, as sf-mod-check's creations-debug rule also says; the usual
+                    # debug-switch pattern is fine on Creations, so this stays a warning.
+                    text = "is DebugOnly: consoles ignore it, so Xbox and PlayStation players see nothing"
+                else:
+                    sev = "error"
             conf = "exact" if exact else ("name only" if len(has) == len(cands) else "name only, some")
             out.append({"file": where, "line": line, "call": call, "rule": rule, "severity": sev,
                         "confidence": conf, "message": f"{call} {text}"})
@@ -962,7 +974,7 @@ def cmd_check(ref, a):
             print("Tip: run 'sf-papyrus-ref build-local' once so calls on inherited functions are matched exactly.")
     if errors:
         return 2
-    return 1 if findings else 0
+    return 1 if any(x["severity"] == "error" for x in findings) else 0
 
 
 # ------------------------------------------------------------------ MCP server (stdio, read-only)
@@ -985,7 +997,7 @@ MCP_TOOLS = [
          "flag": {"type": "string", "enum": list(FLAGS)}, "script": {"type": "string"}}, "required": ["flag"]}},
     {"name": "papyrus_check",
      "description": "Check .psc or .pex files (or folders) for BetaOnly calls (errors), DebugOnly calls "
-                    "(warnings; errors when creations=true, for console players) and Latent calls inside loops. "
+                    "(warnings; errors when creations=true, for console players, except Debug.Trace, Debug.Notification and Debug.MessageBox) and Latent calls inside loops. "
                     "Read-only.",
      "inputSchema": {"type": "object", "properties": {
          "paths": {"type": "array", "items": {"type": "string"}, "minItems": 1},
@@ -1178,7 +1190,7 @@ def parser():
     p.add_argument("paths", nargs="+", help=".psc or .pex files, or folders searched below them")
     p.add_argument("--allow", action="append", metavar="SCRIPT.NAME",
                    help="calls never reported, for example Debug.Trace (repeat, or separate with commas)")
-    p.add_argument("--creations", action="store_true", help="report DebugOnly calls as errors (console players)")
+    p.add_argument("--creations", action="store_true", help="report DebugOnly calls as errors (console players), except Debug.Trace, Debug.Notification and Debug.MessageBox, which stay warnings")
     p.add_argument("--strict", action="store_true",
                    help="also report a name-only match when only some scripts with that name carry the flag")
     sub.add_parser("mcp", parents=[common], help="run as a read-only MCP server on stdin and stdout (for AI agents)")

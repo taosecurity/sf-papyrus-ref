@@ -2,13 +2,18 @@
 # SPDX-FileCopyrightText: 2026 Richard Bejtlich
 """Build data/official-names.json from a saved copy (wget mirror) of the official Starfield Creation Kit wiki.
 
-  python -I tools/build_names.py --mirror <folder> [--out data/official-names.json] [--diff] [--verbose] [--log <file>]
+  python -I tools/build_names.py --mirror <folder> [--sources <folder>] [--out data/official-names.json] [--diff]
+                                 [--verbose] [--log <file>]
 
 What it keeps from the wiki: each Papyrus function, event and struct NAME, the script it belongs to, whether it is a
 function, an event or a struct, the five flags the wiki marks with categories (Latent, Non-delayed, DebugOnly, BetaOnly,
 Inventory-safe), and a link to the official page. Nothing else: no descriptions, no signatures, no examples.
 The page text is read only to tell an event from a function and is never written out.
 
+--sources  a folder of the Creation Kit's .psc sources. The wiki has no page for the functions and events that the
+           quest and alias scripts (Quest, Alias, ReferenceAlias, LocationAlias, RefCollectionAlias) define in Papyrus
+           rather than natively, such as Quest.SetStage and ReferenceAlias.OnLoad. Their NAMES are added from the
+           sources, marked "origin": "sources" and with no wiki link. Nothing else is read from the sources.
 --diff     compare the new list with the existing --out file and print what was added, removed or reflagged,
            without writing anything.
 --expect   "scripts,functions,events,structs" counts the result must match (a sanity check for maintainers).
@@ -39,7 +44,9 @@ COND_CATS = {"Condition Functions", "Condition Functions For Spaceship Reference
 FN_RE = re.compile(r"^(?P<name>\S.*?)\s*-\s+(?P<script>[A-Za-z][A-Za-z0-9_]*)$")
 NAME_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 _CONFIG_KEYS = ("wgPageName", "wgTitle", "wgCanonicalNamespace", "wgCurRevisionId", "wgCategories")
-ALLOWED_ENTRY_KEYS = {"script", "name", "kind", "flags", "wiki"}
+ALLOWED_ENTRY_KEYS = {"script", "name", "kind", "flags", "wiki", "origin"}
+SOURCE_SCRIPTS = ("Quest", "Alias", "ReferenceAlias", "LocationAlias", "RefCollectionAlias")
+DECL_RE = re.compile(r"(?im)^[ \t]*(?:[A-Za-z_][\w:]*(?:\[\])?[ \t]+)?(Function|Event)[ \t]+([A-Za-z_]\w*)[ \t]*\(")
 
 
 def page_config(text):
@@ -160,11 +167,38 @@ def build(rows):
     return scripts, entries
 
 
+def add_source_names(scripts, entries, folder):
+    """Add the names the wiki lacks on SOURCE_SCRIPTS, read from <folder>/<Script>.psc. Names only."""
+    have = {(e["script"].lower(), e["name"].lower()) for e in entries}
+    added = 0
+    for s in SOURCE_SCRIPTS:
+        path = Path(folder) / (s + ".psc")
+        if not path.is_file():
+            log.warning("%s not found in %s: its names were not added", path.name, folder)
+            continue
+        canon = next((x for x in scripts if x.lower() == s.lower()), s)
+        if canon not in scripts:
+            scripts.append(canon)
+        for m in DECL_RE.finditer(path.read_text(encoding="utf-8-sig", errors="replace")):
+            name = m.group(2)
+            if (s.lower(), name.lower()) in have:
+                continue
+            have.add((s.lower(), name.lower()))
+            entries.append({"script": canon, "name": name, "kind": m.group(1).lower(), "flags": [], "wiki": "",
+                            "origin": "sources"})
+            added += 1
+            log.debug("source name %s.%s (%s)", canon, name, m.group(1).lower())
+    entries.sort(key=lambda e: (e["script"].lower(), e["name"].lower(), e["kind"]))
+    scripts.sort(key=str.lower)
+    log.info("Added %d names from the Creation Kit sources that the wiki lacks", added)
+
+
 def document(scripts, entries, revision):
     return {
         "format": 1,
         "source": "Names and flag categories from the official Starfield Creation Kit wiki "
-                  "(starfield.creationkit.bethesda.net). Names, flags and links only: no wiki text, "
+                  "(starfield.creationkit.bethesda.net), plus the names of quest and alias functions and events "
+                  "the wiki lacks (origin: sources). Names, flags and links only: no wiki text, "
                   "no signatures and no game script sources.",
         "wiki_revision": revision,
         "built": datetime.date.today().isoformat(),
@@ -185,6 +219,10 @@ def check_shape(doc):
             raise SystemExit(f"Entry {e.get('script')}.{e.get('name')} has unexpected fields {sorted(extra)}.")
         if not (NAME_RE.match(e["name"]) and NAME_RE.match(e["script"])):
             raise SystemExit(f"Entry {e['script']}.{e['name']} is not a plain Papyrus name.")
+        if e.get("origin") == "sources":
+            if e["wiki"] or e["flags"] or e["script"] not in SOURCE_SCRIPTS:
+                raise SystemExit(f"Entry {e['script']}.{e['name']} has an odd source-only marker.")
+            continue
         if not e["wiki"].startswith(WIKI_BASE) or len(e["wiki"]) > len(WIKI_BASE) + 120:
             raise SystemExit(f"Entry {e['script']}.{e['name']} has an odd wiki link.")
 
@@ -208,6 +246,7 @@ def main(argv=None):
     here = Path(__file__).resolve().parent.parent
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--mirror", type=Path, required=True, help="the wget copy of starfield.creationkit.bethesda.net")
+    ap.add_argument("--sources", type=Path, help="folder of the Creation Kit's .psc sources (see above)")
     ap.add_argument("--out", type=Path, default=here / "data" / "official-names.json")
     ap.add_argument("--diff", action="store_true", help="show changes against --out and write nothing")
     ap.add_argument("--expect", help='counts to match, "scripts,functions,events,structs"')
@@ -224,6 +263,11 @@ def main(argv=None):
         return 1
     rows = read_mirror(a.mirror)
     scripts, entries = build(rows)
+    if a.sources:
+        if not a.sources.is_dir():
+            log.error("Sources folder not found: %s.", a.sources)
+            return 1
+        add_source_names(scripts, entries, a.sources)
     doc = document(scripts, entries, max(r["rev"] for r in rows))
     check_shape(doc)
     c = doc["counts"]

@@ -7,8 +7,9 @@
                                              VERSION and that CHANGELOG.md has a dated entry for it
 
 Also writes build/release-notes.md (the CHANGELOG entry), used as the GitHub release text.
-The zip holds one folder, sf-papyrus-ref-<version>/, with every committed file except the GitHub workflow and git
-settings. It uses fixed file times, the same "made on" system (Unix) for every entry, mode 0644 (0755 for the
+The zip holds every committed file except the GitHub workflow and git settings directly at its top level, with no
+folder around them: Windows' Extract All then makes one folder named after the zip, sf-papyrus-ref-<version>, and
+nothing is nested inside it (the Linux command is unzip <zip> -d sf-papyrus-ref-<version>). It uses fixed file times, the same "made on" system (Unix) for every entry, mode 0644 (0755 for the
 Linux launcher), and no
 compression (stored), so the same commit gives the same zip on any system. The files come from the commit
 (git show HEAD:<file>), so uncommitted edits never reach a zip. A working tree with changes is refused
@@ -64,6 +65,7 @@ def changelog_entry(version):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--tag", help="the git tag being released, e.g. v0.1.0")
+    ap.add_argument("--dist", default=os.path.join(HERE, "dist"), help="folder for the zip (default: dist)")
     ap.add_argument("--allow-dirty", action="store_true",
                     help="build from the files on disk, uncommitted changes included (never for a release)")
     args = ap.parse_args()
@@ -83,7 +85,7 @@ def main():
         if "not yet released" in heading.lower() or not re.search(r"\d{4}-\d\d-\d\d", heading):
             raise SystemExit(f"CHANGELOG.md entry for {version} needs a release date, e.g. '## {version} (2026-11-20)'")
 
-    dist = os.path.join(HERE, "dist")
+    dist = os.path.abspath(args.dist)
     build = os.path.join(HERE, "build")
     os.makedirs(dist, exist_ok=True)
     os.makedirs(build, exist_ok=True)
@@ -96,7 +98,7 @@ def main():
                     data = f.read()
             else:
                 data = git("show", f"HEAD:{rel}")
-            info = zipfile.ZipInfo(f"{top}/{rel}", FIXED_TIME)
+            info = zipfile.ZipInfo(rel, FIXED_TIME)
             info.create_system = 3   # Unix, on every OS (Python sets 0 on Windows, which changes the zip's bytes)
             info.compress_type = zipfile.ZIP_STORED   # no zlib: its output can differ between systems
             mode = 0o100755 if rel in EXECUTABLE else 0o100644

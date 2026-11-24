@@ -1,6 +1,6 @@
 # AGENTS.md: sf-papyrus-ref for AI assistants
 
-These are plain steps for an AI assistant helping someone use sf-papyrus-ref. Every command here was run once on sf-papyrus-ref 0.2.3 before release. The [README](README.md) has the full description.
+These are plain steps for an AI assistant helping someone use sf-papyrus-ref. Every command here was run once on sf-papyrus-ref 0.2.4 before release. The [README](README.md) has the full description.
 
 ## 1. What it is for
 
@@ -18,11 +18,11 @@ sf-papyrus-ref is an offline reference for Starfield's Papyrus scripting languag
 
 ## 3. Install
 
-Download `sf-papyrus-ref-0.2.3.zip` and `sf-papyrus-ref-0.2.3.zip.sha256` from https://github.com/taosecurity/sf-papyrus-ref/releases, then check the zip:
+Download `sf-papyrus-ref-0.2.4.zip` and `sf-papyrus-ref-0.2.4.zip.sha256` from https://github.com/taosecurity/sf-papyrus-ref/releases, then check the zip:
 
-    certutil -hashfile sf-papyrus-ref-0.2.3.zip SHA256
+    certutil -hashfile sf-papyrus-ref-0.2.4.zip SHA256
 
-On Linux, run `sha256sum -c sf-papyrus-ref-0.2.3.zip.sha256` instead. Unzip it anywhere and keep its files together; `sf_papyrus_ref.py` loads `pexread.py`, `pscread.py`, `htmlsite.py`, `data/` and `site-assets/` from its own folder.
+On Linux, run `sha256sum -c sf-papyrus-ref-0.2.4.zip.sha256` instead. Unzip it (Extract All on Windows makes one folder, `sf-papyrus-ref-0.2.4`; on Linux use `unzip sf-papyrus-ref-0.2.4.zip -d sf-papyrus-ref-0.2.4`) and keep its files together; `sf_papyrus_ref.py` loads `pexread.py`, `pscread.py`, `htmlsite.py`, `data/` and `site-assets/` from its own folder.
 
 ## 4. Prove the install works
 
@@ -58,9 +58,9 @@ It prints `Debug.Notification  (function)`, then `Flags: DebugOnly`, and exits w
 
   In each of the two files, it finds `Debug.Notification` and `Debug.MessageBox` (DebugOnly; the second is in a property's Set handler), `Utility.Wait` in a loop (Latent) and `Game.Warning` (BetaOnly). It exits with code 1.
 
-- Before a Bethesda Creations upload, check with DebugOnly as an error:
+- Before a Bethesda Creations upload, check with DebugOnly as an error (`Debug.Trace`, `Debug.Notification` and `Debug.MessageBox` stay warnings, so no `--allow` is needed for them):
 
-      python -I sf_papyrus_ref.py check "<mod folder>" --allow Debug.Trace --creations --json
+      python -I sf_papyrus_ref.py check "<mod folder>" --creations --json
 
 - Compare the official list with the user's sources:
 
@@ -100,7 +100,7 @@ Each returns the same JSON as the matching command with `--json`, plus `exit_cod
 - **Exit codes:**
   - `lookup` and `script`: 0 found, 1 not found.
   - `list`: 0 some, 1 none.
-  - `check`: 0 clean, 1 findings.
+  - `check`: 0 no errors (warnings are printed but do not fail), 1 errors found.
   - `compare`: 0 all identical, 1 some changed or not from the Creation Kit.
   - `html`, `build-local`, `diff` and `data`: 0 done.
   - Every command: 2 for bad options, unreadable files or no sources.
