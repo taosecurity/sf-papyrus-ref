@@ -13,7 +13,8 @@ The page text is read only to tell an event from a function and is never written
 --sources  a folder of the Creation Kit's .psc sources. The wiki has no page for the functions and events that the
            quest and alias scripts (Quest, Alias, ReferenceAlias, LocationAlias, RefCollectionAlias) define in Papyrus
            rather than natively, such as Quest.SetStage and ReferenceAlias.OnLoad. Their NAMES are added from the
-           sources, marked "origin": "sources" and with no wiki link. Nothing else is read from the sources.
+           sources, marked "origin": "sources" and with no wiki link, with the DebugOnly and BetaOnly keywords of
+           their declarations. Nothing else is read from the sources.
 --diff     compare the new list with the existing --out file and print what was added, removed or reflagged,
            without writing anything.
 --expect   "scripts,functions,events,structs" counts the result must match (a sanity check for maintainers).
@@ -46,7 +47,15 @@ NAME_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 _CONFIG_KEYS = ("wgPageName", "wgTitle", "wgCanonicalNamespace", "wgCurRevisionId", "wgCategories")
 ALLOWED_ENTRY_KEYS = {"script", "name", "kind", "flags", "wiki", "origin"}
 SOURCE_SCRIPTS = ("Quest", "Alias", "ReferenceAlias", "LocationAlias", "RefCollectionAlias")
-DECL_RE = re.compile(r"(?im)^[ \t]*(?:[A-Za-z_][\w:]*(?:\[\])?[ \t]+)?(Function|Event)[ \t]+([A-Za-z_]\w*)[ \t]*\(")
+DECL_RE = re.compile(r"(?im)^[ \t]*(?:[A-Za-z_][\w:]*(?:\[\])?[ \t]+)?(Function|Event)[ \t]+([A-Za-z_]\w*)[ \t]*\(([^\n]*)")
+SCRIPT_RE = re.compile(r"(?im)^[ \t]*Scriptname[ \t]+[^\n]*")
+SOURCE_FLAGS = {"debugonly", "betaonly"}
+
+
+def source_flags(line):
+    """The DebugOnly and BetaOnly keywords on one declaration or Scriptname line (comments dropped)."""
+    words = re.findall(r"[A-Za-z_]+", line.split(";", 1)[0].lower())
+    return SOURCE_FLAGS & set(words)
 
 
 def page_config(text):
@@ -179,12 +188,16 @@ def add_source_names(scripts, entries, folder):
         canon = next((x for x in scripts if x.lower() == s.lower()), s)
         if canon not in scripts:
             scripts.append(canon)
-        for m in DECL_RE.finditer(path.read_text(encoding="utf-8-sig", errors="replace")):
+        text = path.read_text(encoding="utf-8-sig", errors="replace")
+        head = SCRIPT_RE.search(text)
+        script_flags = source_flags(head.group(0)) if head else set()
+        for m in DECL_RE.finditer(text):
             name = m.group(2)
             if (s.lower(), name.lower()) in have:
                 continue
             have.add((s.lower(), name.lower()))
-            entries.append({"script": canon, "name": name, "kind": m.group(1).lower(), "flags": [], "wiki": "",
+            flags = [f for f in FLAG_ORDER if f in (source_flags(m.group(3)) | script_flags)]
+            entries.append({"script": canon, "name": name, "kind": m.group(1).lower(), "flags": flags, "wiki": "",
                             "origin": "sources"})
             added += 1
             log.debug("source name %s.%s (%s)", canon, name, m.group(1).lower())
@@ -220,7 +233,8 @@ def check_shape(doc):
         if not (NAME_RE.match(e["name"]) and NAME_RE.match(e["script"])):
             raise SystemExit(f"Entry {e['script']}.{e['name']} is not a plain Papyrus name.")
         if e.get("origin") == "sources":
-            if e["wiki"] or e["flags"] or e["script"] not in SOURCE_SCRIPTS:
+            if (e["wiki"] or not set(e["flags"]) <= SOURCE_FLAGS
+                    or e["script"].lower() not in {x.lower() for x in SOURCE_SCRIPTS}):
                 raise SystemExit(f"Entry {e['script']}.{e['name']} has an odd source-only marker.")
             continue
         if not e["wiki"].startswith(WIKI_BASE) or len(e["wiki"]) > len(WIKI_BASE) + 120:

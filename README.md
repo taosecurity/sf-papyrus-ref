@@ -127,7 +127,7 @@ sf-papyrus-ref 0.2.4 by Richard Bejtlich - MIT - https://github.com/taosecurity/
 Data file: ...\sf-papyrus-ref\data\official-names.json
 The list comes from official wiki revision 8392 and was built on 2026-11-24.
 It holds 103 scripts, 1401 functions, 540 events and 3 structs.
-Flags: Latent 63, Non-delayed 194, DebugOnly 56, BetaOnly 2, Inventory-safe 37
+Flags: Latent 63, Non-delayed 194, DebugOnly 58, BetaOnly 2, Inventory-safe 37
 Names and flag categories from the official Starfield Creation Kit wiki (starfield.creationkit.bethesda.net), plus the names of quest and alias functions and events the wiki lacks (origin: sources). Names, flags and links only: no wiki text, no signatures and no game script sources.
 ```
 
@@ -168,7 +168,7 @@ Scripts on the official list but not in your sources: 1: Array
 Names on the wiki but not in your sources: 2
   Game.EnableFastTravel
   ObjectReference.OnDeath
-Names in your sources but not on the wiki: 206
+Names in your sources but not on the wiki: 497
   ActiveMagicEffect.OnActivate
 ...
 ```

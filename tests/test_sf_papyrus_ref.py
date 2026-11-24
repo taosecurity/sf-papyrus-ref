@@ -184,6 +184,25 @@ class Local(unittest.TestCase):
         # Latent is never a keyword in the sources (only the wiki marks it), so Slow gives no finding.
         self.assertEqual(got, {("Parent.Peek", "debugonly", "exact")})
 
+    def test_diff_leaves_source_names_off_the_wiki_side(self):
+        """Names the list took from the sources have no wiki page, so diff must not count them as on the wiki."""
+        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+            ref_mod.main(["build-local", "--sources", self.src, "--cache", self.cache, "--quiet"])
+        data = os.path.join(self.tmp.name, "names.json")
+        with open(data, "w", encoding="utf-8") as f:
+            json.dump({"format": 1, "source": "test", "wiki_revision": 1, "built": "2026-01-01", "counts": {},
+                       "scripts": ["Parent"], "entries": [
+                           {"script": "Parent", "name": "Slow", "kind": "function", "flags": ["latent"], "wiki": "w"},
+                           {"script": "Parent", "name": "Peek", "kind": "function", "flags": ["debugonly"],
+                            "wiki": "", "origin": "sources"}]}, f)
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(io.StringIO()):
+            code = ref_mod.main(["diff", "--data", data, "--cache", self.cache, "--json", "--quiet"])
+        self.assertEqual(code, 0)
+        j = json.loads(out.getvalue())
+        self.assertIn("Parent.Peek", j["only_in_sources"])
+        self.assertEqual(j["flag_counts"]["debugonly"]["wiki"], 0)
+
     def test_lookup_follows_parents(self):
         with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
             ref_mod.main(["build-local", "--sources", self.src, "--cache", self.cache, "--quiet"])
@@ -345,6 +364,8 @@ class ShippedData(unittest.TestCase):
             code, out, _ = run_real("lookup", name, "--no-local")
             self.assertEqual(code, 0, name)
             self.assertIn("no page", out)
+        flags = {(e["script"], e["name"]): e["flags"] for e in self.doc["entries"]}
+        self.assertEqual(flags[("Alias", "StartObjectProfiling")], ["debugonly"])
 
     def test_counts_agree(self):
         c = self.doc["counts"]
@@ -391,6 +412,17 @@ class Builder(unittest.TestCase):
                                    ("OnReset", "event", "sources")})
             build_mod.check_shape({"entries": entries})
 
+    def test_source_names_keep_debugonly_and_betaonly(self):
+        with tempfile.TemporaryDirectory() as t:
+            with open(os.path.join(t, "Alias.psc"), "w", encoding="utf-8") as f:
+                f.write("Scriptname Alias extends ScriptObject Native Hidden\n"
+                        "Function StartObjectProfiling() native debugOnly ; betaOnly in a comment\n"
+                        "Function Odd() native BetaOnly\nFunction Plain() native\n")
+            scripts, entries = [], []
+            build_mod.add_source_names(scripts, entries, t)
+            got = {e["name"]: e["flags"] for e in entries}
+            self.assertEqual(got, {"StartObjectProfiling": ["debugonly"], "Odd": ["betaonly"], "Plain": []})
+            build_mod.check_shape({"entries": entries})
 
     def page(self, name, cats, body):
         return {"page": name, "title": name.replace("_", " "), "cats": set(cats), "body": body, "rev": 5,

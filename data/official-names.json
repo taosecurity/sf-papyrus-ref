@@ -10,7 +10,7 @@
   "structs": 3,
   "latent": 63,
   "nondelayed": 194,
-  "debugonly": 56,
+  "debugonly": 58,
   "betaonly": 2,
   "invsafe": 37
  },
@@ -2270,7 +2270,9 @@
    "script": "Alias",
    "name": "StartObjectProfiling",
    "kind": "function",
-   "flags": [],
+   "flags": [
+    "debugonly"
+   ],
    "wiki": "",
    "origin": "sources"
   },
@@ -2278,7 +2280,9 @@
    "script": "Alias",
    "name": "StopObjectProfiling",
    "kind": "function",
-   "flags": [],
+   "flags": [
+    "debugonly"
+   ],
    "wiki": "",
    "origin": "sources"
   },

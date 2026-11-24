@@ -25,7 +25,7 @@ check also takes --allow Script.Name (never report it), --creations (DebugOnly i
 
 The shipped list holds names, flags and links to the official Creation Kit wiki only. It never guesses: a name
 that is not in the list is reported as not found, with near matches. Signatures come only from your own sources.
-Exit codes: lookup and script 0 found, 1 not found; list 0 matched, 1 none; check 0 clean, 1 findings;
+Exit codes: lookup and script 0 found, 1 not found; list 0 matched, 1 none; check 0 no errors (warnings are printed), 1 errors found;
 compare 0 all identical, 1 some changed or not from the CK;
 2 bad arguments, an unreadable data file or script, or no sources found.
 It only reads files. It writes only the local cache (build-local), the site folder (html) and the --log file.
@@ -493,7 +493,7 @@ def cmd_diff(ref, a):
         s = local.scripts.get(low)
         if not s:
             continue
-        wiki = {e["name"].lower(): e for e in ref.entries if e["script"] == sname}
+        wiki = {e["name"].lower(): e for e in ref.entries if e["script"] == sname and e.get("origin") != "sources"}
         src = {m["name"].lower(): m for m in s["members"]}
         only_wiki += [f"{sname}.{wiki[k]['name']}" for k in sorted(wiki.keys() - src.keys())]
         only_src += [f"{sname}.{src[k]['name']}" for k in sorted(src.keys() - wiki.keys())]
@@ -504,7 +504,7 @@ def cmd_diff(ref, a):
                 flag_diffs.append({"name": f"{sname}.{wiki[k]['name']}", "wiki": sorted(wf), "sources": sorted(sf)})
     counts = {}
     for f in ("debugonly", "betaonly"):
-        counts[f] = {"wiki": sum(f in e["flags"] for e in ref.entries),
+        counts[f] = {"wiki": sum(f in e["flags"] for e in ref.entries if e.get("origin") != "sources"),
                      "sources_keyword": sum(f in m["flags"] for low in ref.scripts if low in local.scripts
                                             for m in local.scripts[low]["members"]),
                      "sources_with_script_flag": sum(f in effective_source_flags(local.scripts[low], m)
