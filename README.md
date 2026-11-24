@@ -125,10 +125,10 @@ Utility.WaitMenuPause  (function)
 > sf-papyrus-ref data
 sf-papyrus-ref 0.2.4 by Richard Bejtlich - MIT - https://github.com/taosecurity/sf-papyrus-ref
 Data file: ...\sf-papyrus-ref\data\official-names.json
-The list comes from official wiki revision 8392 and was built on 2026-11-20.
-It holds 103 scripts, 1390 functions, 260 events and 3 structs.
+The list comes from official wiki revision 8392 and was built on 2026-11-24.
+It holds 103 scripts, 1401 functions, 540 events and 3 structs.
 Flags: Latent 63, Non-delayed 194, DebugOnly 56, BetaOnly 2, Inventory-safe 37
-Names and flag categories from the official Starfield Creation Kit wiki (starfield.creationkit.bethesda.net). Names, flags and links only: no wiki text, no signatures and no game script sources.
+Names and flag categories from the official Starfield Creation Kit wiki (starfield.creationkit.bethesda.net), plus the names of quest and alias functions and events the wiki lacks (origin: sources). Names, flags and links only: no wiki text, no signatures and no game script sources.
 ```
 
 ## build-local: read signatures from your own Creation Kit (recommended)
